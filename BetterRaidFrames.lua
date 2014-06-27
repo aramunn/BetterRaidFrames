@@ -1167,36 +1167,27 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 
 	-- Health Bar Color
 	if (nHealthCurr / nHealthMax) < self.nHealthWarn then
-		wndHealthBar:SetSprite("sprRaid_HealthProgBar_Red")
-		wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Red")
+		--wndHealthBar:SetSprite("sprRaid_HealthProgBar_Red")
+		--wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Red")
 	elseif (nHealthCurr / nHealthMax) < self.nHealthWarn2 then
-		wndHealthBar:SetSprite("sprRaid_HealthProgBar_Orange")
-		wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Orange")
+		--wndHealthBar:SetSprite("sprRaid_HealthProgBar_Orange")
+		--wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Orange")
 	else
-		wndHealthBar:SetSprite("sprRaid_HealthProgBar_Green")
-		wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Green")
+		--wndHealthBar:SetSprite("sprRaid_HealthProgBar_Green")
+		wndHealthBar:SetSprite("BasicSprites:WhiteFill")
+		wndHealthBar:SetBGColor("ff26a614")
+		--wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Green")
 	end
 
 	-- Scaling
-	local nArtOffset = 2
 	local nWidth = wndMemberBtn:GetWidth() - 4
-	local nPointHealthRight = nWidth * (nHealthCurr / nTotalMax)
-	local nPointShieldRight = nWidth * ((nHealthCurr + nShieldMax) / nTotalMax)
-	local nPointAbsorbRight = nWidth * ((nHealthCurr + nShieldMax + nAbsorbMax) / nTotalMax)
-
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
-	--[[if not self.wndRaidCustomizeFixedShields:IsChecked() then
-		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nPointHealthRight, nBottom)
-		wndMaxShield:SetAnchorOffsets(nPointHealthRight - nArtOffset, nTop, nPointShieldRight, nBottom)
-		wndMaxAbsorb:SetAnchorOffsets(nPointShieldRight - nArtOffset, nTop, nPointAbsorbRight, nBottom)
-	elseif nAbsorbMax == 0 then
-		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.9 * nHealthCurr / nHealthMax, nBottom)
-		wndMaxShield:SetAnchorOffsets(nWidth * 0.9, nTop, nWidth, nBottom)
-	else
-		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.9 * nHealthCurr / nHealthMax, nBottom)
-		wndMaxShield:SetAnchorOffsets(nWidth * 0.9, nTop, nWidth, nBottom)
-		wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.8, nTop, nWidth * 0.9, nBottom)
-	end--]]
+	
+	-- Offset parameters are Left, top, right and bottom
+	-- Example usage for HP/Shield -> To have the start of the shield bar align with the end of the HP bar, Shield-Left must be HP-Right.
+	wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.7, nBottom)
+	wndMaxShield:SetAnchorOffsets(nWidth * 0.7, nTop, nWidth * 0.87, nBottom)
+	wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.87, nTop, nWidth, nBottom)
 end
 
 function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
