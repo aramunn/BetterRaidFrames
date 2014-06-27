@@ -238,7 +238,6 @@ function BetterRaidFrames:OnDocumentReady()
 	self.wndRaidCustomizeManaBar = wndRaidOptions:FindChild("RaidCustomizeManaBar")
 	self.wndRaidCustomizeCategories = wndRaidOptions:FindChild("RaidCustomizeCategories")
 	self.wndRaidCustomizeClassIcons = wndRaidOptions:FindChild("RaidCustomizeClassIcons")
-	self.wndRaidCustomizeFixedShields = wndRaidOptions:FindChild("RaidCustomizeFixedShields")
 	self.wndRaidCustomizeNumColAdd = wndRaidOptions:FindChild("RaidCustomizeNumColAdd")
 	self.wndRaidCustomizeNumColSub = self.wndMain:FindChild("RaidCustomizeNumColSub")
 	self.wndRaidCustomizeNumColValue = self.wndMain:FindChild("RaidCustomizeNumColValue")
@@ -1186,7 +1185,7 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 	local nPointAbsorbRight = nWidth * ((nHealthCurr + nShieldMax + nAbsorbMax) / nTotalMax)
 
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
-	if not self.wndRaidCustomizeFixedShields:IsChecked() then
+	--[[if not self.wndRaidCustomizeFixedShields:IsChecked() then
 		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nPointHealthRight, nBottom)
 		wndMaxShield:SetAnchorOffsets(nPointHealthRight - nArtOffset, nTop, nPointShieldRight, nBottom)
 		wndMaxAbsorb:SetAnchorOffsets(nPointShieldRight - nArtOffset, nTop, nPointAbsorbRight, nBottom)
@@ -1197,7 +1196,7 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.9 * nHealthCurr / nHealthMax, nBottom)
 		wndMaxShield:SetAnchorOffsets(nWidth * 0.9, nTop, nWidth, nBottom)
 		wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.8, nTop, nWidth * 0.9, nBottom)
-	end
+	end--]]
 end
 
 function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
