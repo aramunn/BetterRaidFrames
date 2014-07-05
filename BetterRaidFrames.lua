@@ -216,6 +216,14 @@ function BetterRaidFrames:OnDocumentReady()
 
 	Apollo.RegisterTimerHandler("ReadyCheckTimeout", 						"OnReadyCheckTimeout", self)
 	Apollo.RegisterEventHandler("VarChange_FrameCount", 					"OnRaidFrameBaseTimer", self)
+	
+	-- Required for saving frame location across sessions
+	Apollo.RegisterEventHandler("WindowManagementReady", 	"OnWindowManagementReady", self)
+	
+	-- Sets the party frame location once windows are ready.
+	function BetterRaidFrames:OnWindowManagementReady()
+		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
+	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
     self.wndMain:FindChild("RaidConfigureBtn"):AttachWindow(self.wndMain:FindChild("RaidOptions"))
@@ -256,8 +264,6 @@ function BetterRaidFrames:OnDocumentReady()
 	self.nRowSize					= 1
 	self.nNumColumns 				= 1
 	self.kstrMyName 				= ""
-	self.nHealthWarn 				= 0.4
-	self.nHealthWarn2 				= 0.6
 	self.tTearOffMemberIDs 			= {}
 
 	if self.strReadyCheckInitiator and self.strReadyCheckMessage then
@@ -1153,32 +1159,18 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 
 	local wndCurrShieldBar = tRaidMember.wndCurrShieldBar
 	wndCurrShieldBar:Show(nHealthCurr > 0 and nShieldMax > 0)
-	wndCurrShieldBar:SetMax(nShieldMax)
-	wndCurrShieldBar:SetProgress(nShieldCurr)
-	wndCurrShieldBar:EnableGlow((wndCurrShieldBar:GetWidth() * nShieldCurr/nShieldMax) > 4)
+	self:SetBarValue(wndCurrShieldBar, 0, nShieldCurr, nShieldMax)
 
 	local wndCurrAbsorbBar = tRaidMember.wndCurrAbsorbBar
-	wndCurrAbsorbBar:SetMax(nAbsorbMax)
-	wndCurrAbsorbBar:SetProgress(nAbsorbCurr)
-	wndCurrAbsorbBar:EnableGlow((wndCurrAbsorbBar:GetWidth() * nAbsorbCurr/nAbsorbMax) > 4)
+	self:SetBarValue(wndCurrAbsorbBar, 0, nAbsorbCurr, nAbsorbMax)
 
-	local wndHealthBarGlow = tRaidMember.wndHealthBarEdgeGlow
-	wndHealthBarGlow:Show(nShieldMax <= 0)
-
+	local wndCurrHealthBar = tRaidMember.wndCurrHealthBar
+	self:SetBarValue(wndCurrHealthBar, 0, nHealthCurr, nHealthMax)
+	
 	-- Health Bar Color
-	if (nHealthCurr / nHealthMax) < self.nHealthWarn then
-		--wndHealthBar:SetSprite("sprRaid_HealthProgBar_Red")
-		--wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Red")
-	elseif (nHealthCurr / nHealthMax) < self.nHealthWarn2 then
-		--wndHealthBar:SetSprite("sprRaid_HealthProgBar_Orange")
-		--wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Orange")
-	else
-		--wndHealthBar:SetSprite("sprRaid_HealthProgBar_Green")
-		wndHealthBar:SetSprite("BasicSprites:WhiteFill")
-		wndHealthBar:SetBGColor("ff26a614")
-		--wndHealthBarGlow:SetSprite("sprRaid_HealthEdgeGlow_Green")
-	end
-
+	wndCurrHealthBar:SetSprite("BasicSprites:WhiteFill")
+	wndCurrHealthBar:SetBGColor("ff26a614")
+	
 	-- Scaling
 	local nWidth = wndMemberBtn:GetWidth() - 4
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
@@ -1188,6 +1180,12 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 	wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.7, nBottom)
 	wndMaxShield:SetAnchorOffsets(nWidth * 0.7, nTop, nWidth * 0.87, nBottom)
 	wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.87, nTop, nWidth, nBottom)
+end
+
+function BetterRaidFrames:SetBarValue(wndBar, fMin, fValue, fMax)
+	wndBar:SetMax(fMax)
+	wndBar:SetFloor(fMin)
+	wndBar:SetProgress(fValue)
 end
 
 function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
@@ -1205,7 +1203,7 @@ function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
 			["strKey"] = strKey,
 			wnd = wndNew,
 			wndHealthBar = wndNew:FindChild("RaidMemberBtn:HealthBar"),
-			wndHealthBarEdgeGlow = wndNew:FindChild("RaidMemberBtn:HealthBar:HealthBarEdgeGlow"),
+			wndCurrHealthBar = wndNew:FindChild("RaidMemberBtn:HealthBar:CurrHealthBar"),
 			wndMaxAbsorbBar = wndNew:FindChild("RaidMemberBtn:MaxAbsorbBar"),
 			wndCurrAbsorbBar = wndNew:FindChild("RaidMemberBtn:MaxAbsorbBar:CurrAbsorbBar"),
 			wndMaxShieldBar = wndNew:FindChild("RaidMemberBtn:MaxShieldBar"),
@@ -1290,9 +1288,3 @@ end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
-
-
-
-
-
-
