@@ -521,7 +521,7 @@ function BetterRaidFrames:UpdateAllMembers()
 		if unitCurr then
 			local bTargetThisMember = unitTarget and unitTarget == unitCurr
 			wndMemberBtn:SetCheck(bTargetThisMember)
-			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx])
+			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitCurr:IsInCombat())
 			self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 			
 			-- Mana Bar
@@ -762,7 +762,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	if unitCurr then
 		local bTargetThisMember = unitTarget and unitTarget == unitCurr
 		wndMemberBtn:SetCheck(bTargetThisMember)
-		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx])
+		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitCurr:IsInCombat())
 		self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 
 		-- Mana Bar
@@ -1286,5 +1286,10 @@ function BetterRaidFrames:OnRaidCustomizeClassIconsCheck(wndHandler, wndControl,
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers, knDirtyResize)
 end
 
+---------------------------------------------------------------------------------------------------
+-- RaidMember Functions
+---------------------------------------------------------------------------------------------------
+
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
+
