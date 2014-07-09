@@ -551,6 +551,7 @@ function BetterRaidFrames:UpdateOffsets()
 
 	-- Calculate this outside the loop, as its the same for entry (TODO REFACTOR)
 	self.nLeftOffsetStartValue = 0
+
 	if self.wndRaidCustomizeClassIcons:IsChecked() then
 		self.nLeftOffsetStartValue = self.nLeftOffsetStartValue + 16 --wndRaidMember:FindChild("RaidMemberClassIcon"):GetWidth()
 	end
@@ -763,6 +764,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		local bTargetThisMember = unitTarget and unitTarget == unitCurr
 		wndMemberBtn:SetCheck(bTargetThisMember)
 		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitCurr:IsInCombat())
+		self:ResizeMemberFrame(wndRaidMember) -- Potential fix for flickering when icons in front of bars update
 		self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 
 		-- Mana Bar
@@ -774,7 +776,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		end
 		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitCurr:GetHealth() > 0 and unitCurr:GetMaxHealth() > 0)
 	end
-
 	self:ResizeMemberFrame(wndRaidMember)
 end
 
