@@ -636,6 +636,7 @@ function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
+	local pass = math.random()
 	local wndRaidMember = tRaidMember.wnd
 	if not wndRaidMember or not wndRaidMember:IsValid() then
 		return
@@ -683,6 +684,8 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	if bShowClassIcon then
 		wndClassIcon:SetSprite(ktIdToClassSprite[tMemberData.eClassId])
 		wndClassIcon:SetTooltip(Apollo.GetString(ktIdToClassTooltip[tMemberData.eClassId]))
+		self:UpdateOffsets()
+		self:ResizeMemberFrame(wndRaidMember) -- Potential fix for flickering when icons in front of bars update
 	end
 	wndClassIcon:Show(bShowClassIcon)
 
@@ -750,6 +753,8 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			wndReadyCheckIcon:SetText("")
 			wndReadyCheckIcon:SetSprite("")
 		end
+		self:UpdateOffsets()
+		self:ResizeMemberFrame(wndRaidMember) -- Potential fix for flickering when icons in front of bars update
 		wndReadyCheckIcon:Show(true)
 		--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 
@@ -764,6 +769,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		local bTargetThisMember = unitTarget and unitTarget == unitCurr
 		wndMemberBtn:SetCheck(bTargetThisMember)
 		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitCurr:IsInCombat())
+		Print(pass)
 		self:ResizeMemberFrame(wndRaidMember) -- Potential fix for flickering when icons in front of bars update
 		self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 
