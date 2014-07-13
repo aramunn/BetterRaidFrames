@@ -636,6 +636,9 @@ function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
+	if not tRaidMember.wnd then
+		return
+	end
 	local wndRaidMember = tRaidMember.wnd
 	if not wndRaidMember or not wndRaidMember:IsValid() then
 		return
