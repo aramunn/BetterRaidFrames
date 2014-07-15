@@ -643,6 +643,10 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	if not wndRaidMember or not wndRaidMember:IsValid() then
 		return
 	end
+	
+	-- Fix for flickering when icons in front of bars update
+	self:UpdateOffsets()
+	self:ResizeMemberFrame(wndRaidMember)
 
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 	local unitTarget = self.unitTarget
@@ -686,8 +690,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	if bShowClassIcon then
 		wndClassIcon:SetSprite(ktIdToClassSprite[tMemberData.eClassId])
 		wndClassIcon:SetTooltip(Apollo.GetString(ktIdToClassTooltip[tMemberData.eClassId]))
-		self:UpdateOffsets()
-		self:ResizeMemberFrame(wndRaidMember) -- Potential fix for flickering when icons in front of bars update
 	end
 	wndClassIcon:Show(bShowClassIcon)
 
@@ -755,8 +757,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			wndReadyCheckIcon:SetText("")
 			wndReadyCheckIcon:SetSprite("")
 		end
-		self:UpdateOffsets()
-		self:ResizeMemberFrame(wndRaidMember) -- Potential fix for flickering when icons in front of bars update
 		wndReadyCheckIcon:Show(true)
 		--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 
@@ -771,7 +771,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		local bTargetThisMember = unitTarget and unitTarget == unitCurr
 		wndMemberBtn:SetCheck(bTargetThisMember)
 		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitCurr:IsInCombat())
-		self:ResizeMemberFrame(wndRaidMember) -- Potential fix for flickering when icons in front of bars update
+		self:ResizeMemberFrame(wndRaidMember) -- Fix for flickering when icons in front of bars update
 		self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 
 		-- Mana Bar
@@ -994,6 +994,8 @@ function BetterRaidFrames:OnReadyCheckTimeout()
 	end
 
 	self.bReadyCheckActive = false
+	
+	self:ResizeAllFrames()
 end
 
 -----------------------------------------------------------------------------------------------
