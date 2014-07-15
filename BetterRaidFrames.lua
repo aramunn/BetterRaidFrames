@@ -407,7 +407,7 @@ function BetterRaidFrames:BuildAllFrames()
 		return
 	elseif not self.bSwapToTwoColsOnce and nGroupMemberCount > 20 then
 		self.bSwapToTwoColsOnce = true
-		self:OnRaidCustomizeNumColAdd(self.wndRaidCustomizeNumColAdd, self.wndRaidCustomizeNumColAdd) -- TODO HACK
+		--self:OnRaidCustomizeNumColAdd(self.wndRaidCustomizeNumColAdd, self.wndRaidCustomizeNumColAdd) -- TODO HACK
 	end
 
 	if nGroupMemberCount ~= self.nPrevMemberCount then
