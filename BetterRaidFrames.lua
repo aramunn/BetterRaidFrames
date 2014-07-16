@@ -519,9 +519,10 @@ function BetterRaidFrames:UpdateAllMembers()
 		-- HP and Shields
 		local unitCurr = GroupLib.GetUnitForGroupMember(idx)
 		if unitCurr then
+			local unitPlayer = GameLib.GetPlayerUnit()
 			local bTargetThisMember = unitTarget and unitTarget == unitCurr
 			wndMemberBtn:SetCheck(bTargetThisMember)
-			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitCurr:IsInCombat())
+			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
 			self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 			
 			-- Mana Bar
@@ -768,9 +769,10 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	-- HP and Shields
 	local unitCurr = GroupLib.GetUnitForGroupMember(nCodeIdx)
 	if unitCurr then
+		local unitPlayer = GameLib.GetPlayerUnit()
 		local bTargetThisMember = unitTarget and unitTarget == unitCurr
 		wndMemberBtn:SetCheck(bTargetThisMember)
-		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitCurr:IsInCombat())
+		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
 		self:ResizeMemberFrame(wndRaidMember) -- Fix for flickering when icons in front of bars update
 		self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 
