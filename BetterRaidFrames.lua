@@ -817,9 +817,16 @@ end
 -----------------------------------------------------------------------------------------------
 
 function BetterRaidFrames:OnRaidCategoryBtnToggle(wndHandler, wndControl) -- RaidCategoryBtn
+	-- Only allow showing while in combat - not hiding. To prevent accidental misclicks.
+	local unitPlayer = GameLib.GetPlayerUnit()
 	local tCategory = wndHandler:GetParent():GetData()
-	tCategory.wndRaidCategoryItems:Show(not tCategory.wndRaidCategoryItems:IsShown())
+	tCategory.wndRaidCategoryItems:Show(not tCategory.wndRaidCategoryItems:IsShown() and not unitPlayer:IsInCombat())
+	wndHandler:SetCheck(not tCategory.wndRaidCategoryItems:IsShown())
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+	if unitPlayer:IsInCombat() then
+		tCategory.wndRaidCategoryItems:Show(true)
+		wndHandler:SetCheck(false)
+	end
 end
 
 function BetterRaidFrames:OnRaidLeaderOptionsToggle(wndHandler, wndControl) -- RaidLeaderOptionsBtn
