@@ -511,9 +511,9 @@ function BetterRaidFrames:UpdateAllMembers()
 	local nInvalidOrDeadMembers = 0
 
 	local unitTarget = GameLib.GetTargetUnit()
+	local unitPlayer = GameLib.GetPlayerUnit()
 	for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
 		local wndMemberBtn = tRaidMember.wndRaidMemberBtn
-
 		local tMemberData = GroupLib.GetGroupMember(idx)
 
 		-- Update bar art if dead -> no longer dead
@@ -522,7 +522,6 @@ function BetterRaidFrames:UpdateAllMembers()
 		-- HP and Shields
 		local unitCurr = GroupLib.GetUnitForGroupMember(idx)
 		if unitCurr then
-			local unitPlayer = GameLib.GetPlayerUnit()
 			local bTargetThisMember = unitTarget and unitTarget == unitCurr
 			wndMemberBtn:SetCheck(bTargetThisMember)
 			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
@@ -776,8 +775,8 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	-- HP and Shields
 	local unitCurr = GroupLib.GetUnitForGroupMember(nCodeIdx)
+	local unitPlayer = GameLib.GetPlayerUnit()
 	if unitCurr then
-		local unitPlayer = GameLib.GetPlayerUnit()
 		local bTargetThisMember = unitTarget and unitTarget == unitCurr
 		wndMemberBtn:SetCheck(bTargetThisMember)
 		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
