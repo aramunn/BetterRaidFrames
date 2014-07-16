@@ -382,7 +382,7 @@ end
 
 function BetterRaidFrames:OnGroup_Updated()
 	if not GroupLib.InRaid() then return end
-	--self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 end
 
 function BetterRaidFrames:OnGroup_MemberFlagsChanged(nMemberIdx, bFromPromotion, tChangedFlags)
