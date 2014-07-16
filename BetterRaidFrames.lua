@@ -516,6 +516,9 @@ function BetterRaidFrames:UpdateAllMembers()
 
 		local tMemberData = GroupLib.GetGroupMember(idx)
 
+		-- Update bar art if dead -> no longer dead
+		self:UpdateBarArt(tMemberData, tRaidMember)
+		
 		-- HP and Shields
 		local unitCurr = GroupLib.GetUnitForGroupMember(idx)
 		if unitCurr then
@@ -636,6 +639,35 @@ function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
 	wndRaidOptions:SetAnchorOffsets(nLeft, nTop, nRight, nTop + wndRaidOptions:ArrangeChildrenVert(0))
 end
 
+function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
+	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
+
+	local bOutOfRange = tMemberData.nHealthMax == 0
+	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+	
+	if not tMemberData.bIsOnline then
+		wndMemberBtn:Enable(false)
+		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
+		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_Disconnect")
+		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
+	elseif bDead then
+		wndMemberBtn:Enable(true)
+		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
+		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
+		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
+	elseif bOutOfRange then
+		wndMemberBtn:Enable(false)
+		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
+		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_OutOfRange")
+		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
+	else
+		wndMemberBtn:Enable(true)
+		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
+		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
+		tRaidMember.wndRaidMemberName:SetText(tMemberData.strCharacterName)
+	end	
+end
+
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
 	if not tRaidMember.wnd then
 		return
@@ -659,31 +691,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
 
 	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
-
-	local bOutOfRange = tMemberData.nHealthMax == 0
-	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
-	if not tMemberData.bIsOnline then
-		wndMemberBtn:Enable(false)
-		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
-		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_Disconnect")
-		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
-	elseif bDead then
-		wndMemberBtn:Enable(true)
-		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
-		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
-		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
-	elseif bOutOfRange then
-		wndMemberBtn:Enable(false)
-		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
-		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_OutOfRange")
-		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
-	else
-		wndMemberBtn:Enable(true)
-		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
-		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
-		tRaidMember.wndRaidMemberName:SetText(tMemberData.strCharacterName)
-	end
-
+	self:UpdateBarArt(tMemberData, tRaidMember)
 	tRaidMember.wndRaidMemberName:Show(self.wndRaidCustomizeShowNames:IsChecked())
 
 	local bShowClassIcon = self.wndRaidCustomizeClassIcons:IsChecked()
