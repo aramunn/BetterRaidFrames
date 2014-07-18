@@ -125,6 +125,25 @@ local knDirtyMembers = bit32.lshift(1, 1)
 local knDirtyGeneral = bit32.lshift(1, 2)
 local knDirtyResize = bit32.lshift(1, 3)
 
+local DefaultSettings = {
+	bLockFrame			= false,
+	bShowIcon_Leader 	= true,
+	bShowIcon_Role		= false,
+	bShowIcon_Class		= false,
+	bShowIcon_Mark		= false,
+	bShowFocus			= false,
+	bShowCategories		= true,
+	bShowNames			= true,
+	bAutoLock_Combat	= true,
+	nNumColumns			= 1,
+	nRowSize			= 1,
+	bRole_DPS			= true,
+	bRole_Healer		= false,
+	bRole_Tank			= false,
+}
+
+DefaultSettings.__index = DefaultSettings	
+
 function BetterRaidFrames:new(o)
     o = o or {}
     setmetatable(o, self)
@@ -160,6 +179,8 @@ function BetterRaidFrames:OnSave(eType)
 		nReadyCheckResponses 	= self.nNumReadyCheckResponses,
 		nSaveVersion 			= knSaveVersion,
 	}
+	
+	self:copyTable(self.settings, tSave)
 
 	return tSave
 end
@@ -185,11 +206,16 @@ function BetterRaidFrames:OnRestore(eType, tSavedData)
 		end
 		Apollo.CreateTimer("ReadyCheckTimeout", math.ceil(knReadyCheckTimeout - fDelta), false)
 	end
+	
+	self.settings = self:copyTable(tSavedData, self.settings)
 end
 
 function BetterRaidFrames:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("BetterRaidFrames.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)
+	
+	self.settings = self.settings or {}
+	setmetatable(self.settings, DefaultSettings)
 end
 
 function BetterRaidFrames:OnDocumentReady()
@@ -296,6 +322,15 @@ function BetterRaidFrames:OnDocumentReady()
 		self:OnCharacterCreated()
 	end
 
+end
+
+function BetterRaidFrames:copyTable(from, to)
+	if not from then return end
+    to = to or {}
+	for k,v in pairs(from) do
+		to[k] = v
+	end
+    return to
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -502,6 +537,7 @@ function BetterRaidFrames:UpdateMemberFrame(tCategory, tCurrMemberList, strCateg
 			self.wndRaidLeaderOptionsBtn:Show(tMemberData.bIsLeader or tMemberData.bRaidAssistant)
 			self.wndRaidMasterLootIconOnly:Show(not tMemberData.bIsLeader)
 			self.wndRaidMasterLootBtn:Show(tMemberData.bIsLeader)
+			self:SetClassRole(tMemberData)
 		end
 	end
 end
@@ -1020,14 +1056,23 @@ end
 
 function BetterRaidFrames:OnConfigSetAsDPSToggle(wndHandler, wndControl)
 	GroupLib.SetRoleDPS(wndHandler:GetData(), wndHandler:IsChecked()) -- Will fire event Group_MemberFlagsChanged
+	self.settings.bRole_DPS = wndControl:IsChecked()
+	self.settings.bRole_Healer = false
+	self.settings.bRole_Tank = false
 end
 
 function BetterRaidFrames:OnConfigSetAsTankToggle(wndHandler, wndControl)
 	GroupLib.SetRoleTank(wndHandler:GetData(), wndHandler:IsChecked()) -- Will fire event Group_MemberFlagsChanged
+	self.settings.bRole_DPS = false
+	self.settings.bRole_Healer = false
+	self.settings.bRole_Tank = wndControl:IsChecked()
 end
 
 function BetterRaidFrames:OnConfigSetAsHealerToggle(wndHandler, wndControl)
 	GroupLib.SetRoleHealer(wndHandler:GetData(), wndHandler:IsChecked()) -- Will fire event Group_MemberFlagsChanged
+	self.settings.bRole_DPS = false
+	self.settings.bRole_Healer = wndControl:IsChecked()
+	self.settings.bRole_Tank = false
 end
 
 function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl) -- RaidMemberMouseHack
@@ -1137,6 +1182,17 @@ end
 -----------------------------------------------------------------------------------------------
 -- Helpers
 -----------------------------------------------------------------------------------------------
+
+function BetterRaidFrames:SetClassRole(tMemberData)
+	-- Stupid if needed here since you can't pass false as a second parameter to SetRole without getting errors
+	if self.settings.bRole_DPS and not tMemberData.bDPS then
+		GroupLib.SetRoleDPS(1, self.settings.bRole_DPS)
+	elseif self.settings.bRole_Tank and not tMemberData.bTank then
+		GroupLib.SetRoleTank(1, self.settings.bRole_Tank)
+	elseif self.settings.bRole_Healer and not tMemberData.bHealer then
+		GroupLib.SetRoleHealer(1, self.settings.bRole_Healer)
+	end
+end
 
 function BetterRaidFrames:OnEnteredCombat(unit, bInCombat)
 	if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsVisible() and unit == GameLib.GetPlayerUnit() and self.wndMain:FindChild("RaidCustomizeLockInCombat"):IsChecked() then
