@@ -478,7 +478,7 @@ function BetterRaidFrames:BuildAllFrames()
 	end
 
 	local tCategoriesToUse = ktGeneralCategories
-	if self.wndRaidCustomizeCategories:IsChecked() then
+	if self.settings.bShowCategories then
 		tCategoriesToUse = ktRoleCategoriesToUse
 	end
 
@@ -582,7 +582,7 @@ function BetterRaidFrames:UpdateAllMembers()
 			self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 			
 			-- Mana Bar
-			local bShowManaBar = self.wndRaidCustomizeManaBar:IsChecked()
+			local bShowManaBar = self.settings.bShowFocus
 			local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
 			if bShowManaBar and tMemberData.nManaMax and tMemberData.nManaMax > 0 then			
 				wndManaBar:SetMax(tMemberData.nManaMax)
@@ -609,7 +609,7 @@ function BetterRaidFrames:UpdateOffsets()
 	-- Calculate this outside the loop, as its the same for entry (TODO REFACTOR)
 	self.nLeftOffsetStartValue = 0
 
-	if self.wndRaidCustomizeClassIcons:IsChecked() then
+	if self.settings.bShowIcon_Class then
 		self.nLeftOffsetStartValue = self.nLeftOffsetStartValue + 16 --wndRaidMember:FindChild("RaidMemberClassIcon"):GetWidth()
 	end
 
@@ -745,9 +745,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
 	self:UpdateBarArt(tMemberData, tRaidMember)
-	tRaidMember.wndRaidMemberName:Show(self.wndRaidCustomizeShowNames:IsChecked())
+	tRaidMember.wndRaidMemberName:Show(self.settings.bShowNames)
 
-	local bShowClassIcon = self.wndRaidCustomizeClassIcons:IsChecked()
+	local bShowClassIcon = self.settings.bShowIcon_Class
 	local wndClassIcon = tRaidMember.wndRaidMemberClassIcon
 	if bShowClassIcon then
 		wndClassIcon:SetSprite(ktIdToClassSprite[tMemberData.eClassId])
@@ -756,7 +756,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	wndClassIcon:Show(bShowClassIcon)
 
 	local nLeaderIdx = 0
-	local bShowLeaderIcon = self.wndRaidCustomizeLeaderIcons:IsChecked()
+	local bShowLeaderIcon = self.settings.bShowIcon_Leader
 	local wndLeaderIcon = tRaidMember.wndRaidMemberIsLeader
 	if bShowLeaderIcon then
 		if tMemberData.bIsLeader then
@@ -774,7 +774,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	wndLeaderIcon:Show(bShowLeaderIcon and nLeaderIdx ~= 0)
 
 	local nRoleIdx = -1
-	local bShowRoleIcon = self.wndRaidCustomizeRoleIcons:IsChecked()
+	local bShowRoleIcon = self.settings.bShowIcon_Role
 	local wndRoleIcon = tRaidMember.wndRaidMemberRoleIcon
 
 	if bShowRoleIcon then
@@ -796,7 +796,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	wndRoleIcon:Show(bShowRoleIcon and nRoleIdx ~= -1)
 
 	local nMarkIdx = 0
-	local bShowMarkIcon = self.wndRaidCustomizeMarkIcons:IsChecked()
+	local bShowMarkIcon = self.settings.bShowIcon_Mark
 	local wndMarkIcon = tRaidMember.wndRaidMemberMarkIcon
 	if bShowMarkIcon then
 		nMarkIdx = tMemberData.nMarkerId or 0
@@ -838,7 +838,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		self:DoHPAndShieldResizing(tRaidMember, unitCurr)
 
 		-- Mana Bar
-		local bShowManaBar = self.wndRaidCustomizeManaBar:IsChecked()
+		local bShowManaBar = self.settings.bShowFocus
 		local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
 		if bShowManaBar and tMemberData.nManaMax and tMemberData.nManaMax > 0 then			
 			wndManaBar:SetMax(tMemberData.nManaMax)
@@ -1146,7 +1146,7 @@ end
 
 function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 	local tCategoriesToUse = {Apollo.GetString("RaidFrame_Members")}
-	if self.wndRaidCustomizeCategories:IsChecked() then
+	if self.settings.bShowCategories then
 		tCategoriesToUse = {Apollo.GetString("RaidFrame_Tanks"), Apollo.GetString("RaidFrame_Healers"), Apollo.GetString("RaidFrame_DPS")}
 	end
 
