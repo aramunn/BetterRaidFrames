@@ -249,6 +249,7 @@ function BetterRaidFrames:OnDocumentReady()
 	-- Sets the party frame location once windows are ready.
 	function BetterRaidFrames:OnWindowManagementReady()
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
+		self:LockFrameHelper(self.settings.bLockFrame)
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -1089,13 +1090,8 @@ function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl) -- RaidMe
 end
 
 function BetterRaidFrames:OnRaidLockFrameBtnToggle(wndHandler, wndControl) -- RaidLockFrameBtn
-	self.wndMain:SetStyle("Sizable", not wndHandler:IsChecked())
-	self.wndMain:SetStyle("Moveable", not wndHandler:IsChecked())
-	if wndHandler:IsChecked() then
-		self.wndMain:SetSprite("sprRaid_BaseNoArrow")
-	else
-		self.wndMain:SetSprite("sprRaid_Base")
-	end
+	self.settings.bLockFrame = wndHandler:IsChecked()
+	self:LockFrameHelper(self.settings.bLockFrame)
 end
 
 function BetterRaidFrames:OnRaidCustomizeNumColAdd(wndHandler, wndControl) -- RaidCustomizeNumColAdd, and once from bSwapToTwoColsOnce
@@ -1191,6 +1187,17 @@ function BetterRaidFrames:SetClassRole(tMemberData)
 		GroupLib.SetRoleTank(1, self.settings.bRole_Tank)
 	elseif self.settings.bRole_Healer and not tMemberData.bHealer then
 		GroupLib.SetRoleHealer(1, self.settings.bRole_Healer)
+	end
+end
+
+function BetterRaidFrames:LockFrameHelper(bLock)
+	self.wndMain:SetStyle("Sizable", not bLock)
+	self.wndMain:SetStyle("Moveable", not bLock)
+	self.wndRaidLockFrameBtn:SetCheck(bLock)
+	if bLock then
+		self.wndMain:SetSprite("sprRaid_BaseNoArrow")
+	else
+		self.wndMain:SetSprite("sprRaid_Base")
 	end
 end
 
