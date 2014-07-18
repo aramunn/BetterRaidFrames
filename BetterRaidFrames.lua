@@ -250,6 +250,7 @@ function BetterRaidFrames:OnDocumentReady()
 	function BetterRaidFrames:OnWindowManagementReady()
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
 		self:LockFrameHelper(self.settings.bLockFrame)
+		self:NumColumnsHelper()
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -285,11 +286,9 @@ function BetterRaidFrames:OnDocumentReady()
 	wndRaidOptions:FindChild("RaidCustomizeCategories"):SetCheck(true)
 	wndRaidOptions:FindChild("RaidCustomizeShowNames"):SetCheck(true)
 	self.wndRaidCustomizeRowSizeSub:Enable(false) -- as self.nRowSize == 1 at default
-	self.wndRaidCustomizeNumColSub:Enable(false) -- as self.nNumColumns == 1 at default
 	self.wndMain:Show(false)
 
 	self.nRowSize					= 1
-	self.nNumColumns 				= 1
 	self.kstrMyName 				= ""
 	self.tTearOffMemberIDs 			= {}
 
@@ -373,7 +372,7 @@ function BetterRaidFrames:OnRaidFrameBaseTimer()
 
 		if bit32.btest(self.nDirtyFlag, knDirtyResize) then
 			self:ResizeAllFrames()
-			if self.nNumColumns then -- This is terrible
+			if self.settings.nNumColumns then -- This is terrible
 				self:ResizeAllFrames()
 			end
 		end
@@ -587,7 +586,7 @@ local kfnSortCategoryMembers = function(a, b)
 end
 
 function BetterRaidFrames:UpdateOffsets()
-	self.nRaidMemberWidth = (self.wndMain:GetWidth() - 22) / self.nNumColumns
+	self.nRaidMemberWidth = (self.wndMain:GetWidth() - 22) / self.settings.nNumColumns
 
 	-- Calculate this outside the loop, as its the same for entry (TODO REFACTOR)
 	self.nLeftOffsetStartValue = 0
@@ -616,7 +615,7 @@ function BetterRaidFrames:ResizeAllFrames()
 		nLeft, nTop, nRight, nBottom = wndCategory:GetAnchorOffsets()
 		local nChildrenHeight = 0
 		if wndRaidCategoryItems:IsShown() then
-			nChildrenHeight = math.ceil(#wndRaidCategoryItems:GetChildren() / self.nNumColumns) * ktRowSizeIndexToPixels[self.nRowSize]
+			nChildrenHeight = math.ceil(#wndRaidCategoryItems:GetChildren() / self.settings.nNumColumns) * ktRowSizeIndexToPixels[self.nRowSize]
 		end
 		wndCategory:SetAnchorOffsets(nLeft, nTop, nRight, nTop + nChildrenHeight + self.knWndCategoryHeight)
 	end
@@ -1095,25 +1094,14 @@ function BetterRaidFrames:OnRaidLockFrameBtnToggle(wndHandler, wndControl) -- Ra
 end
 
 function BetterRaidFrames:OnRaidCustomizeNumColAdd(wndHandler, wndControl) -- RaidCustomizeNumColAdd, and once from bSwapToTwoColsOnce
-	self.nNumColumns = self.nNumColumns + 1
-	if self.nNumColumns >= 5 then
-		self.nNumColumns = 5
-		wndHandler:Enable(false)
-	end
-	self.wndRaidCustomizeNumColSub:Enable(true)
-	self.wndRaidCustomizeNumColValue:SetText(self.nNumColumns)
+	self.settings.nNumColumns = self.settings.nNumColumns + 1
+	self:NumColumnsHelper()
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 end
 
 function BetterRaidFrames:OnRaidCustomizeNumColSub(wndHandler, wndControl) -- RaidCustomizeNumColSub
-	self.nNumColumns = self.nNumColumns - 1
-	if self.nNumColumns <= 1 then
-		self.nNumColumns = 1
-		wndHandler:Enable(false)
-	end
-	self.wndRaidCustomizeNumColAdd:Enable(true)
-	self.wndRaidCustomizeNumColValue:SetText(self.nNumColumns)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+	self.settings.nNumColumns = self.settings.nNumColumns - 1
+	self:NumColumnsHelper()
 end
 
 function BetterRaidFrames:OnRaidCustomizeRowSizeAdd(wndHandler, wndControl) -- RaidCustomizeRowSizeAdd
@@ -1124,7 +1112,6 @@ function BetterRaidFrames:OnRaidCustomizeRowSizeAdd(wndHandler, wndControl) -- R
 	end
 	self.wndRaidCustomizeRowSizeSub:Enable(true)
 	self.wndRaidCustomizeRowSizeValue:SetText(self.nRowSize)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 end
 
 function BetterRaidFrames:OnRaidCustomizeRowSizeSub(wndHandler, wndControl) -- RaidCustomizeRowSizeSub
@@ -1199,6 +1186,26 @@ function BetterRaidFrames:LockFrameHelper(bLock)
 	else
 		self.wndMain:SetSprite("sprRaid_Base")
 	end
+end
+
+function BetterRaidFrames:NumColumnsHelper()
+	if self.settings.nNumColumns >= 5 then
+		self.settings.nNumColumns = 5
+		self.wndRaidCustomizeNumColAdd:Enable(false)
+	else
+		self.wndRaidCustomizeNumColAdd:Enable(true)
+	end
+
+	if self.settings.nNumColumns <= 1 then
+		self.settings.nNumColumns = 1
+		self.wndRaidCustomizeNumColSub:Enable(false)
+	else
+		self.wndRaidCustomizeNumColSub:Enable(true)
+	end
+	
+	self.wndRaidCustomizeNumColValue:SetText(self.settings.nNumColumns)
+	
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 end
 
 function BetterRaidFrames:OnEnteredCombat(unit, bInCombat)
