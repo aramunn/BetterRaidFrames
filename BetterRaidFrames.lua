@@ -251,6 +251,7 @@ function BetterRaidFrames:OnDocumentReady()
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
 		self:LockFrameHelper(self.settings.bLockFrame)
 		self:NumColumnsHelper()
+		self:NumRowsHelper()
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -285,10 +286,8 @@ function BetterRaidFrames:OnDocumentReady()
 	wndRaidOptions:FindChild("RaidCustomizeLeaderIcons"):SetCheck(true)
 	wndRaidOptions:FindChild("RaidCustomizeCategories"):SetCheck(true)
 	wndRaidOptions:FindChild("RaidCustomizeShowNames"):SetCheck(true)
-	self.wndRaidCustomizeRowSizeSub:Enable(false) -- as self.nRowSize == 1 at default
 	self.wndMain:Show(false)
 
-	self.nRowSize					= 1
 	self.kstrMyName 				= ""
 	self.tTearOffMemberIDs 			= {}
 
@@ -615,7 +614,7 @@ function BetterRaidFrames:ResizeAllFrames()
 		nLeft, nTop, nRight, nBottom = wndCategory:GetAnchorOffsets()
 		local nChildrenHeight = 0
 		if wndRaidCategoryItems:IsShown() then
-			nChildrenHeight = math.ceil(#wndRaidCategoryItems:GetChildren() / self.settings.nNumColumns) * ktRowSizeIndexToPixels[self.nRowSize]
+			nChildrenHeight = math.ceil(#wndRaidCategoryItems:GetChildren() / self.settings.nNumColumns) * ktRowSizeIndexToPixels[self.settings.nRowSize]
 		end
 		wndCategory:SetAnchorOffsets(nLeft, nTop, nRight, nTop + nChildrenHeight + self.knWndCategoryHeight)
 	end
@@ -630,7 +629,7 @@ end
 function BetterRaidFrames:ResizeMemberFrame(wndRaidMember)
 	local tRaidMember = wndRaidMember:GetData()
 	local nLeft, nTop, nRight, nBottom = wndRaidMember:GetAnchorOffsets()
-	wndRaidMember:SetAnchorOffsets(nLeft, nTop, nLeft + self.nRaidMemberWidth, nTop + ktRowSizeIndexToPixels[self.nRowSize])
+	wndRaidMember:SetAnchorOffsets(nLeft, nTop, nLeft + self.nRaidMemberWidth, nTop + ktRowSizeIndexToPixels[self.settings.nRowSize])
 	wndRaidMember:ArrangeChildrenHorz(0)
 
 	-- Button Offsets (from tear off button)
@@ -651,7 +650,7 @@ function BetterRaidFrames:ResizeMemberFrame(wndRaidMember)
 	-- Resize Button
 	local wndRaidMemberBtn = tRaidMember.wndRaidMemberBtn
 	nLeft,nTop,nRight,nBottom = wndRaidMemberBtn:GetAnchorOffsets()
-	wndRaidMemberBtn:SetAnchorOffsets(nLeft, nTop, nLeft + self.nRaidMemberWidth - nLeftOffset, nTop + ktRowSizeIndexToPixels[self.nRowSize] + 9)
+	wndRaidMemberBtn:SetAnchorOffsets(nLeft, nTop, nLeft + self.nRaidMemberWidth - nLeftOffset, nTop + ktRowSizeIndexToPixels[self.settings.nRowSize] + 9)
 end
 
 function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
@@ -1096,7 +1095,6 @@ end
 function BetterRaidFrames:OnRaidCustomizeNumColAdd(wndHandler, wndControl) -- RaidCustomizeNumColAdd, and once from bSwapToTwoColsOnce
 	self.settings.nNumColumns = self.settings.nNumColumns + 1
 	self:NumColumnsHelper()
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 end
 
 function BetterRaidFrames:OnRaidCustomizeNumColSub(wndHandler, wndControl) -- RaidCustomizeNumColSub
@@ -1105,24 +1103,13 @@ function BetterRaidFrames:OnRaidCustomizeNumColSub(wndHandler, wndControl) -- Ra
 end
 
 function BetterRaidFrames:OnRaidCustomizeRowSizeAdd(wndHandler, wndControl) -- RaidCustomizeRowSizeAdd
-	self.nRowSize = self.nRowSize + 1
-	if self.nRowSize >= 5 then
-		self.nRowSize = 5
-		wndHandler:Enable(false)
-	end
-	self.wndRaidCustomizeRowSizeSub:Enable(true)
-	self.wndRaidCustomizeRowSizeValue:SetText(self.nRowSize)
+	self.settings.nRowSize = self.settings.nRowSize + 1
+	self:NumRowsHelper()
 end
 
 function BetterRaidFrames:OnRaidCustomizeRowSizeSub(wndHandler, wndControl) -- RaidCustomizeRowSizeSub
-	self.nRowSize = self.nRowSize - 1
-	if self.nRowSize <= 1 then
-		self.nRowSize = 1
-		wndHandler:Enable(false)
-	end
-	self.wndRaidCustomizeRowSizeAdd:Enable(true)
-	self.wndRaidCustomizeRowSizeValue:SetText(self.nRowSize)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+	self.settings.nRowSize = self.settings.nRowSize - 1
+	self:NumRowsHelper()
 end
 
 function BetterRaidFrames:DestroyAndRedrawAllFromUI(wndHandler, wndControl) -- RaidCustomizeRoleIcons
@@ -1204,6 +1191,26 @@ function BetterRaidFrames:NumColumnsHelper()
 	end
 	
 	self.wndRaidCustomizeNumColValue:SetText(self.settings.nNumColumns)
+	
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+end
+
+function BetterRaidFrames:NumRowsHelper()
+	if self.settings.nRowSize >= 5 then
+		self.settings.nRowSize = 5
+		self.wndRaidCustomizeRowSizeAdd:Enable(false)
+	else
+		self.wndRaidCustomizeRowSizeAdd:Enable(true)
+	end
+	
+	if self.settings.nRowSize <= 1 then
+		self.settings.nRowSize = 1
+		self.wndRaidCustomizeRowSizeSub:Enable(false)
+	else
+		self.wndRaidCustomizeRowSizeSub:Enable(true)
+	end
+
+	self.wndRaidCustomizeRowSizeValue:SetText(self.settings.nRowSize)
 	
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 end
