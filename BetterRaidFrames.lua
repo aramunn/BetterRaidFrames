@@ -275,6 +275,7 @@ function BetterRaidFrames:OnDocumentReady()
 	self.wndRaidCustomizeManaBar = wndRaidOptions:FindChild("RaidCustomizeManaBar")
 	self.wndRaidCustomizeCategories = wndRaidOptions:FindChild("RaidCustomizeCategories")
 	self.wndRaidCustomizeClassIcons = wndRaidOptions:FindChild("RaidCustomizeClassIcons")
+	self.wndRaidCustomizeLockInCombat = wndRaidOptions:FindChild("RaidCustomizeLockInCombat")
 	self.wndRaidCustomizeNumColAdd = wndRaidOptions:FindChild("RaidCustomizeNumColAdd")
 	self.wndRaidCustomizeNumColSub = self.wndMain:FindChild("RaidCustomizeNumColSub")
 	self.wndRaidCustomizeNumColValue = self.wndMain:FindChild("RaidCustomizeNumColValue")
@@ -282,10 +283,6 @@ function BetterRaidFrames:OnDocumentReady()
 	self.wndRaidCustomizeRowSizeAdd = self.wndMain:FindChild("RaidCustomizeRowSizeAdd")
 	self.wndRaidCustomizeRowSizeValue = self.wndMain:FindChild("RaidCustomizeRowSizeValue")
 
-	wndRaidOptions:FindChild("RaidCustomizeLockInCombat"):SetCheck(true)
-	wndRaidOptions:FindChild("RaidCustomizeLeaderIcons"):SetCheck(true)
-	wndRaidOptions:FindChild("RaidCustomizeCategories"):SetCheck(true)
-	wndRaidOptions:FindChild("RaidCustomizeShowNames"):SetCheck(true)
 	self.wndMain:Show(false)
 
 	self.kstrMyName 				= ""
@@ -320,7 +317,9 @@ function BetterRaidFrames:OnDocumentReady()
 	if unitPlayer then
 		self:OnCharacterCreated()
 	end
-
+	
+	-- Refresh settings visually
+	self:RefreshSettings()
 end
 
 function BetterRaidFrames:copyTable(from, to)
@@ -330,6 +329,26 @@ function BetterRaidFrames:copyTable(from, to)
 		to[k] = v
 	end
     return to
+end
+
+function BetterRaidFrames:RefreshSettings()
+	if self.settings.bShowIcon_Leader ~= nil then
+		self.wndRaidCustomizeLeaderIcons:SetCheck(self.settings.bShowIcon_Leader) end
+	if self.settings.bShowIcon_Role ~= nil then
+		self.wndRaidCustomizeRoleIcons:SetCheck(self.settings.bShowIcon_Role) end
+	if self.settings.bShowIcon_Class ~= nil then
+		self.wndRaidCustomizeClassIcons:SetCheck(self.settings.bShowIcon_Class) end
+	if self.settings.bShowIcon_Mark ~= nil then
+		self.wndRaidCustomizeMarkIcons:SetCheck(self.settings.bShowIcon_Mark) end
+	if self.settings.bShowFocus ~= nil then
+		self.wndRaidCustomizeManaBar:SetCheck(self.settings.bShowFocus) end
+	if self.settings.bShowCategories ~= nil then
+		self.wndRaidCustomizeCategories:SetCheck(self.settings.bShowCategories) end
+	if self.settings.bShowNames ~= nil then
+		self.wndRaidCustomizeShowNames:SetCheck(self.settings.bShowNames) end
+	if self.settings.bAutoLock_Combat ~= nil then
+		self.wndRaidCustomizeLockInCombat:SetCheck(self.settings.bAutoLock_Combat)
+	end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -887,6 +906,7 @@ function BetterRaidFrames:OnRaidConfigureToggle(wndHandler, wndControl) -- RaidC
 	if wndHandler:IsChecked() then
 		Event_FireGenericEvent("GenericEvent_Raid_ToggleMasterLoot", false)
 		Event_FireGenericEvent("GenericEvent_Raid_ToggleLeaderOptions", false)
+		self:RefreshSettings()
 	end
 end
 
@@ -1373,20 +1393,43 @@ end
 -- BetterRaidFramesForm Functions
 ---------------------------------------------------------------------------------------------------
 
-function BetterRaidFrames:OnRaidCustomizeCategoryCheck(wndHandler, wndControl, eMouseButton)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
+function BetterRaidFrames:OnRaidCustomizeLeaderIconsCheck( wndHandler, wndControl, eMouseButton )
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+	self.settings.bShowIcon_Leader = wndHandler:IsChecked()
 end
 
-function BetterRaidFrames:OnRaidCustomizeShowNamesCheck(wndHandler, wndControl, eMouseButton)
+function BetterRaidFrames:OnRaidCustomizeRoleIconsCheck( wndHandler, wndControl, eMouseButton )
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
-end
-
-function BetterRaidFrames:OnRaidCustomizeDirtyMembers(wndHandler, wndControl, eMouseButton)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+	self.settings.bShowIcon_Role = wndHandler:IsChecked()
 end
 
 function BetterRaidFrames:OnRaidCustomizeClassIconsCheck(wndHandler, wndControl, eMouseButton)
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers, knDirtyResize)
+	self.settings.bShowIcon_Class = wndHandler:IsChecked()
+end
+
+function BetterRaidFrames:OnRaidCustomizeMarkIconsCheck( wndHandler, wndControl, eMouseButton )
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+	self.settings.bShowIcon_Mark = wndHandler:IsChecked()
+end
+
+function BetterRaidFrames:OnRaidCustomizeFocusBarCheck( wndHandler, wndControl, eMouseButton )
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+	self.settings.bShowFocus = wndHandler:IsChecked()
+end
+
+function BetterRaidFrames:OnRaidCustomizeCategoryCheck(wndHandler, wndControl, eMouseButton)
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
+	self.settings.bShowCategories = wndHandler:IsChecked()
+end
+
+function BetterRaidFrames:OnRaidCustomizeNamesCheck( wndHandler, wndControl, eMouseButton )
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+	self.settings.bShowNames = wndHandler:IsChecked()
+end
+
+function BetterRaidFrames:OnRaidCustomizeCombatLock( wndHandler, wndControl, eMouseButton )
+	self.settings.bAutoLock_Combat = wndHandler:IsChecked()
 end
 
 ---------------------------------------------------------------------------------------------------
