@@ -435,7 +435,8 @@ end
 
 function BetterRaidFrames:OnGroup_Updated()
 	if not GroupLib.InRaid() then return end
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
+	-- Commented out for TESTING TODO (bug with low fps in bigger raid groups)
+	--self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 end
 
 function BetterRaidFrames:OnGroup_MemberFlagsChanged(nMemberIdx, bFromPromotion, tChangedFlags)
@@ -722,7 +723,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
-	if not tRaidMember.wnd then
+	if not tRaidMember or not tRaidMember.wnd then
 		return
 	end
 	local wndRaidMember = tRaidMember.wnd
