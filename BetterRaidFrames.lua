@@ -745,22 +745,37 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:Enable(false)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_Disconnect")
-		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
+		if self.settings.bShowNames then
+			tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
+		else
+			tRaidMember.wndRaidMemberName:SetText(nil)
+		end
 	elseif bDead then
 		wndMemberBtn:Enable(true)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
-		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
+		if self.settings.bShowNames then
+			tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
+		else
+			tRaidMember.wndRaidMemberName:SetText(nil)
+		end
 	elseif bOutOfRange then
 		wndMemberBtn:Enable(false)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_OutOfRange")
-		tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
+		if self.settings.bShowNames then
+			tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
+		else
+			tRaidMember.wndRaidMemberName:SetText(nil)
+		end
 	else
 		wndMemberBtn:Enable(true)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
-		tRaidMember.wndRaidMemberName:SetText(tMemberData.strCharacterName)
+
+		-- Update Text Overlays
+		-- We're appending on the raid member name which is the default text overlay
+		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
 	end	
 end
 
@@ -788,8 +803,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
 	self:UpdateBarArt(tMemberData, tRaidMember)
-	tRaidMember.wndRaidMemberName:Show(self.settings.bShowNames)
-
+	-- always show, for text overlay, is set to nil if no need to display anything
+	tRaidMember.wndRaidMemberName:Show(true)
+	
 	local bShowClassIcon = self.settings.bShowIcon_Class
 	local wndClassIcon = tRaidMember.wndRaidMemberClassIcon
 	if bShowClassIcon then
@@ -1342,6 +1358,104 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 	wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.7, nBottom)
 	wndMaxShield:SetAnchorOffsets(nWidth * 0.7, nTop, nWidth * 0.87, nBottom)
 	wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.87, nTop, nWidth, nBottom)
+end
+
+function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, strCharacterName)
+	local wndRaidMemberName = tRaidMember.wndRaidMemberName
+	-- No text needs to be drawn if all HP Text options are disabled
+	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
+		-- Update text to be empty, otherwise it will be stuck at the old value
+		if self.settings.bShowNames then
+			wndRaidMemberName:SetText(strCharacterName)
+		else
+			wndRaidMemberName:SetText(nil)
+		end
+		return
+	end
+	
+	local strHealthPercentage = self:RoundPercentage(nHealthCurr, nHealthMax)
+	local strHealthCurrRounded
+	local strHealthMaxRounded
+
+	if nHealthCurr < 1000 then
+		strHealthCurrRounded = nHealthCurr
+	else
+		strHealthCurrRounded = self:RoundNumber(nHealthCurr)
+	end
+
+	if nHealthMax < 1000 then
+		strHealthMaxRounded = nHealthMax
+	else
+		strHealthMaxRounded = self:RoundNumber(nHealthMax)
+	end
+
+	-- Only ShowHP_Full selected
+	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
+		if self.settings.bShowNames then
+			wndRaidMemberName:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
+		else
+			wndRaidMemberName:SetText(nHealthCurr.."/"..nHealthMax)
+		end
+		return
+	end
+
+	-- ShowHP_Full + Pct
+	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
+		if self.settings.bShowNames then
+			wndRaidMemberName:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
+		else
+			wndRaidMemberName:SetText(nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
+		end
+		return
+	end
+
+	-- Only ShowHP_K selected
+	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
+		if self.settings.bShowNames then
+			wndRaidMemberName:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded)
+		else
+			wndRaidMemberName:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded)
+		end
+		return
+	end
+
+	-- ShowHP_K + Pct
+	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and self.settings.bShowHP_Pct then
+		if self.settings.bShowNames then
+			wndRaidMemberName:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
+		else
+			wndRaidMemberName:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
+		end
+		return
+	end
+
+	-- Only Pct selected
+	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
+		if self.settings.bShowNames then
+			wndRaidMemberName:SetText(strCharacterName.." - "..strHealthPercentage)
+		else
+			wndRaidMemberName:SetText(strHealthPercentage)
+		end
+		return
+	end
+end
+
+function BetterRaidFrames:RoundNumber(n)
+	local hundreds = math.floor(n / 100) % 10
+	if hundreds == 0 then
+		return ('%.0fK'):format(math.floor(n/1000))
+	else
+		return ('%.0f.%.0fK'):format(math.floor(n/1000), hundreds)
+	end
+end
+
+function BetterRaidFrames:RoundPercentage(n, total)
+	local hundreds = math.floor(n / total) % 10
+	if hundreds == 0 then
+		return ('%.1f%%'):format(n/total * 100)
+	else
+		return ('%.0f%%'):format(math.floor(n/total) * 100)
+	end
 end
 
 function BetterRaidFrames:SetBarValue(wndBar, fMin, fValue, fMax)
