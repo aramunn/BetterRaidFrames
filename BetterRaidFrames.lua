@@ -242,6 +242,7 @@ function BetterRaidFrames:OnDocumentReady()
 
 	Apollo.RegisterTimerHandler("ReadyCheckTimeout", 						"OnReadyCheckTimeout", self)
 	Apollo.RegisterEventHandler("VarChange_FrameCount", 					"OnRaidFrameBaseTimer", self)
+	Apollo.RegisterEventHandler("ChangeWorld", 								"OnChangeWorld", self)
 	
 	-- Required for saving frame location across sessions
 	Apollo.RegisterEventHandler("WindowManagementReady", 	"OnWindowManagementReady", self)
@@ -405,6 +406,10 @@ end
 -- Main Draw Methods
 -----------------------------------------------------------------------------------------------
 
+function BetterRaidFrames:OnChangeWorld()
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
+end
+
 function BetterRaidFrames:OnGroup_Join()
 	if not GroupLib.InRaid() then return end
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
@@ -435,8 +440,6 @@ end
 
 function BetterRaidFrames:OnGroup_Updated()
 	if not GroupLib.InRaid() then return end
-	-- Commented out for TESTING TODO (bug with low fps in bigger raid groups)
-	--self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 end
 
 function BetterRaidFrames:OnGroup_MemberFlagsChanged(nMemberIdx, bFromPromotion, tChangedFlags)
