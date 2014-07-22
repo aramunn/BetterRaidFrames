@@ -1294,10 +1294,6 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 	local wndCurrHealthBar = tRaidMember.wndCurrHealthBar
 	self:SetBarValue(wndCurrHealthBar, 0, nHealthCurr, nHealthMax)
 	
-	-- Health Bar Color
-	wndCurrHealthBar:SetSprite("BasicSprites:WhiteFill")
-	wndCurrHealthBar:SetBGColor("ff26a614")
-	
 	-- Scaling
 	local nWidth = wndMemberBtn:GetWidth() - 4
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
