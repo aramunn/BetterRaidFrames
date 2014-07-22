@@ -126,6 +126,7 @@ local knDirtyGeneral = bit32.lshift(1, 2)
 local knDirtyResize = bit32.lshift(1, 3)
 
 local DefaultSettings = {
+	-- Built in settings
 	bLockFrame			= false,
 	bShowIcon_Leader 	= true,
 	bShowIcon_Role		= false,
@@ -140,6 +141,17 @@ local DefaultSettings = {
 	bRole_DPS			= true,
 	bRole_Healer		= false,
 	bRole_Tank			= false,
+	
+	-- Custom settings via /brf
+	ShowHP_Full = false,
+	ShowHP_K = false,
+	ShowHP_Pct = false,
+	ShowShield_K = false,
+	ShowShield_Pct = false,
+	ShowAbsorb_K = false,
+	TrackDebuffs = false,
+	ShowShieldBar = true,
+	ShowAbsorbBar = true,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -213,6 +225,13 @@ end
 function BetterRaidFrames:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("BetterRaidFrames.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)
+	
+	-- Configured our forms
+	self.wndConfig = Apollo.LoadForm(self.xmlDoc, "ConfigForm", nil, self)
+	self.wndConfig:Show(false)
+	
+	-- Register handler for slash commands that open the configuration form
+	Apollo.RegisterSlashCommand("brf", "OnConfigOn", self)
 	
 	self.settings = self.settings or {}
 	setmetatable(self.settings, DefaultSettings)
@@ -333,6 +352,7 @@ function BetterRaidFrames:copyTable(from, to)
 end
 
 function BetterRaidFrames:RefreshSettings()
+	-- Settings related to the default customize options
 	if self.settings.bShowIcon_Leader ~= nil then
 		self.wndRaidCustomizeLeaderIcons:SetCheck(self.settings.bShowIcon_Leader) end
 	if self.settings.bShowIcon_Role ~= nil then
@@ -348,8 +368,27 @@ function BetterRaidFrames:RefreshSettings()
 	if self.settings.bShowNames ~= nil then
 		self.wndRaidCustomizeShowNames:SetCheck(self.settings.bShowNames) end
 	if self.settings.bAutoLock_Combat ~= nil then
-		self.wndRaidCustomizeLockInCombat:SetCheck(self.settings.bAutoLock_Combat)
-	end
+		self.wndRaidCustomizeLockInCombat:SetCheck(self.settings.bAutoLock_Combat) end
+
+	-- Settings related to /brf settings frame
+	if self.settings.ShowHP_Full ~= nil then
+		self.wndConfig:FindChild("Button_ShowHP_Full"):SetCheck(self.settings.ShowHP_Full) end
+	if self.settings.ShowHP_K ~= nil then
+		self.wndConfig:FindChild("Button_ShowHP_K"):SetCheck(self.settings.ShowHP_K) end
+	if self.settings.ShowHP_Pct ~= nil then
+		self.wndConfig:FindChild("Button_ShowHP_Pct"):SetCheck(self.settings.ShowHP_Pct) end
+	if self.settings.ShowShield_K ~= nil then
+		self.wndConfig:FindChild("Button_ShowShield_K"):SetCheck(self.settings.ShowShield_K) end
+	if self.settings.ShowShield_Pct ~= nil then
+		self.wndConfig:FindChild("Button_ShowShield_Pct"):SetCheck(self.settings.ShowShield_Pct) end
+	if self.settings.ShowAbsorb_K ~= nil then
+		self.wndConfig:FindChild("Button_ShowAbsorb_K"):SetCheck(self.settings.ShowAbsorb_K) end
+	if self.settings.TrackDebuffs ~= nil then
+		self.wndConfig:FindChild("Button_TrackDebuffs"):SetCheck(self.settings.TrackDebuffs) end
+	if self.settings.ShowShieldBar ~= nil then
+		self.wndConfig:FindChild("Button_ShowShieldBar"):SetCheck(self.settings.ShowShieldBar) end
+	if self.settings.ShowAbsorbBar ~= nil then
+		self.wndConfig:FindChild("Button_ShowAbsorbBar"):SetCheck(self.settings.ShowAbsorbBar) end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -1435,6 +1474,74 @@ end
 ---------------------------------------------------------------------------------------------------
 -- RaidMember Functions
 ---------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+-- ConfigForm Functions
+---------------------------------------------------------------------------------------------------
+
+function BetterRaidFrames:OnConfigOn()
+	self.wndConfig:Show(true)
+	self:RefreshSettings()
+end
+
+function BetterRaidFrames:OnCloseButton( wndHandler, wndControl, eMouseButton )
+	self.wndConfig:Show(false)
+end
+
+function BetterRaidFrames:Button_ShowHP_Full( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowHP_Full = wndControl:IsChecked()
+	if self.wndConfig:FindChild("Button_ShowHP_K"):IsChecked() and wndControl:IsChecked() then
+		self.settings.ShowHP_K = false
+		self.wndConfig:FindChild("Button_ShowHP_K"):SetCheck(false)
+	end
+end
+
+function BetterRaidFrames:Button_ShowHP_K( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowHP_K = wndControl:IsChecked()
+	if self.wndConfig:FindChild("Button_ShowHP_Full"):IsChecked() and wndControl:IsChecked() then
+		self.settings.ShowHP_Full = false
+		self.wndConfig:FindChild("Button_ShowHP_Full"):SetCheck(false)
+	end
+end
+
+function BetterRaidFrames:Button_ShowHP_Pct( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowHP_Pct = wndControl:IsChecked()
+end
+
+function BetterRaidFrames:Button_ShowShield_K( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowShield_K = wndControl:IsChecked()
+	if self.wndConfig:FindChild("Button_ShowShield_Pct"):IsChecked() and wndControl:IsChecked() then
+		self.settings.ShowShield_Pct = false
+		self.wndConfig:FindChild("Button_ShowShield_Pct"):SetCheck(false)
+	end
+end
+
+function BetterRaidFrames:Button_ShowShield_Pct( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowShield_Pct = wndControl:IsChecked()
+	if self.wndConfig:FindChild("Button_ShowShield_K"):IsChecked() and wndControl:IsChecked() then
+		self.settings.ShowShield_K = false
+		self.wndConfig:FindChild("Button_ShowShield_K"):SetCheck(false)
+	end
+end
+
+function BetterRaidFrames:Button_ShowAbsorb_K( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowAbsorb_K = wndControl:IsChecked()
+end
+
+function BetterRaidFrames:Button_TrackDebuffs( wndHandler, wndControl, eMouseButton )
+	self.settings.TrackDebuffs = wndControl:IsChecked()
+end
+
+function BetterRaidFrames:Button_ShowShieldBar( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowShieldBar = wndControl:IsChecked()
+	-- TODO add call to function that resizes our bars appropriately depending on settings of which bars to show.
+end
+
+function BetterRaidFrames:Button_ShowAbsorbBar( wndHandler, wndControl, eMouseButton )
+	self.settings.ShowAbsorbBar = wndControl:IsChecked()
+	-- TODO add call to function that resizes our bars appropriately depending on settings of which bars to show.
+end
+
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
