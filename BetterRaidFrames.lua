@@ -780,7 +780,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:Enable(true)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
-		tRaidMember.wndHealthBar:SetSprite("CRB_Raid:sprRaid_ShieldEmptyB")
+		tRaidMember.wndHealthBar:SetSprite("CRB_Raid:sprRaid_ShieldEmptyBar")
 
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
