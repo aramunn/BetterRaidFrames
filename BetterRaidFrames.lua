@@ -465,7 +465,7 @@ function BetterRaidFrames:OnGroup_Remove()
 	self:DestroyMemberWindows(self.nPrevMemberCount)
 	self.nPrevMemberCount = self.nPrevMemberCount - 1
 
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers, knDirtyResize)
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers, knDirtyResize, knDirtyGeneral)
 end
 
 function BetterRaidFrames:OnGroup_Left()
@@ -612,24 +612,16 @@ function BetterRaidFrames:UpdateAllMembers()
 	for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
 		local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 		local tMemberData = GroupLib.GetGroupMember(idx)
-		
-		-- Debug
-		local strCharacterName = tMemberData.strCharacterName
-		local Rover = Apollo.GetAddon("Rover")
-		Rover:AddWatch(strCharacterName.."tMemberData", tMemberData, 1)
-		Rover:AddWatch(strCharacterName.."tRaidMember", tRaidMember, 1)
-		
 
 		-- Update bar art if dead -> no longer dead
 		self:UpdateBarArt(tMemberData, tRaidMember)
 		
 		-- HP and Shields
-		local unitCurr = GroupLib.GetUnitForGroupMember(idx)
-		if unitCurr then
+		if tMemberData then
 			local bTargetThisMember = unitTarget and unitTarget == unitCurr
 			wndMemberBtn:SetCheck(bTargetThisMember)
 			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
-			self:DoHPAndShieldResizing(tRaidMember, unitCurr)
+			self:DoHPAndShieldResizing(tRaidMember, tMemberData)
 			
 			-- Mana Bar
 			local bShowManaBar = self.settings.bShowFocus
@@ -746,8 +738,6 @@ function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
 end
 
 function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
-    --Print(debug.traceback())
-
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 
 	local bOutOfRange = tMemberData.nHealthMax == 0
@@ -758,9 +748,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_Disconnect")
 		tRaidMember.wndHealthBar:SetSprite("")
-		
-		Print(tMemberData.strCharacterName.." - Not Online")
-		
+
 		if self.settings.bShowNames then
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
 		else
@@ -771,8 +759,6 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
 		tRaidMember.wndHealthBar:SetSprite("")
-
-		Print(tMemberData.strCharacterName.." - Dead")
 
 		if self.settings.bShowNames then
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
@@ -785,8 +771,6 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_OutOfRange")
 		tRaidMember.wndHealthBar:SetSprite("")
 		
-		Print(tMemberData.strCharacterName.." - Out of range")
-		
 		if self.settings.bShowNames then
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
 		else
@@ -797,8 +781,6 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
 		tRaidMember.wndHealthBar:SetSprite("CRB_Raid:sprRaid_ShieldEmptyB")
-		
-		Print(tMemberData.strCharacterName.." - Normal")
 
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
@@ -823,7 +805,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 	local unitTarget = self.unitTarget
 
-	tRaidMember.wndHealthBar:Show(true) -- originally false
+	tRaidMember.wndHealthBar:Show(true)
 	tRaidMember.wndMaxAbsorbBar:Show(false)
 	tRaidMember.wndMaxShieldBar:Show(false)
 	tRaidMember.wndCurrShieldBar:Show(false)
@@ -917,14 +899,13 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	end
 
 	-- HP and Shields
-	local unitCurr = GroupLib.GetUnitForGroupMember(nCodeIdx)
 	local unitPlayer = GameLib.GetPlayerUnit()
-	if unitCurr then
+	if tMemberData then
 		local bTargetThisMember = unitTarget and unitTarget == unitCurr
 		wndMemberBtn:SetCheck(bTargetThisMember)
 		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
 		self:ResizeMemberFrame(wndRaidMember) -- Fix for flickering when icons in front of bars update
-		self:DoHPAndShieldResizing(tRaidMember, unitCurr)
+		self:DoHPAndShieldResizing(tRaidMember, tMemberData)
 
 		-- Mana Bar
 		local bShowManaBar = self.settings.bShowFocus
@@ -1346,21 +1327,21 @@ function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberDat
 	return bResult
 end
 
-function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
-	if not unitPlayer then
+function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, tMemberData)
+	if not tMemberData then
 		return
 	end
-
+	
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 
-	local nHealthCurr = unitPlayer:GetHealth()
-	local nHealthMax = unitPlayer:GetMaxHealth()
-	local nShieldCurr = unitPlayer:GetShieldCapacity()
-	local nShieldMax = unitPlayer:GetShieldCapacityMax()
+	local nHealthCurr = tMemberData.nHealth
+	local nHealthMax = tMemberData.nHealthMax
+	local nShieldCurr = tMemberData.nShield
+	local nShieldMax = tMemberData.nShieldMax
 	local nAbsorbCurr = 0
-	local nAbsorbMax = unitPlayer:GetAbsorptionMax()
+	local nAbsorbMax = tMemberData.nAbsorptionMax
 	if nAbsorbMax > 0 then
-		nAbsorbCurr = unitPlayer:GetAbsorptionValue() -- Since it doesn't clear when the buff drops off
+		nAbsorbCurr = tMemberData.nAbsorption -- Since it doesn't clear when the buff drops off
 	end
 	local nTotalMax = nHealthMax + nShieldMax + nAbsorbMax
 
@@ -1368,7 +1349,7 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 	local wndHealthBar = tRaidMember.wndHealthBar
 	local wndMaxAbsorb = tRaidMember.wndMaxAbsorbBar
 	local wndMaxShield = tRaidMember.wndMaxShieldBar
-	wndHealthBar:Show(true)--nHealthCurr > 0 and nHealthMax > 0)
+	wndHealthBar:Show(true)
 	wndMaxAbsorb:Show(nHealthCurr > 0 and nAbsorbMax > 0)
 	wndMaxShield:Show(nHealthCurr > 0 and nShieldMax > 0)
 
@@ -1427,7 +1408,6 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_Full selected
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			Print(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax) -- debug, prints correctly
 			wnd:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
 		else
 			wnd:SetText(nHealthCurr.."/"..nHealthMax)
