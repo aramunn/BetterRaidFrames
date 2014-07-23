@@ -745,18 +745,23 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:Enable(false)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_Disconnect")
+		tRaidMember.wndHealthBar:SetSprite("")
+		
+		Print(tMemberData.strCharacterName.." - Not Online")
+		
 		if self.settings.bShowNames then
-			Print("Showing names - offline user")
-			Print(tostring(tRaidMember.wndHealthBar:IsShown()))
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
 		else
-			Print("NOT Showing names - offline user")
 			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
 	elseif bDead then
 		wndMemberBtn:Enable(true)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
+		tRaidMember.wndHealthBar:SetSprite("")
+
+		Print(tMemberData.strCharacterName.." - Dead")
+
 		if self.settings.bShowNames then
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
 		else
@@ -766,6 +771,10 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:Enable(false)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_OutOfRange")
+		tRaidMember.wndHealthBar:SetSprite("")
+		
+		Print(tMemberData.strCharacterName.." - Out of range")
+		
 		if self.settings.bShowNames then
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
 		else
@@ -775,6 +784,9 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:Enable(true)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
+		tRaidMember.wndHealthBar:SetSprite("CRB_Raid:sprRaid_ShieldEmptyB")
+		
+		Print(tMemberData.strCharacterName.." - Normal")
 
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
@@ -806,6 +818,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
 
 	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
+
 	self:UpdateBarArt(tMemberData, tRaidMember)
 	
 	local bShowClassIcon = self.settings.bShowIcon_Class
@@ -1337,7 +1350,7 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 	local wndHealthBar = tRaidMember.wndHealthBar
 	local wndMaxAbsorb = tRaidMember.wndMaxAbsorbBar
 	local wndMaxShield = tRaidMember.wndMaxShieldBar
-	wndHealthBar:Show(nHealthCurr > 0 and nHealthMax > 0)
+	wndHealthBar:Show(true)--nHealthCurr > 0 and nHealthMax > 0)
 	wndMaxAbsorb:Show(nHealthCurr > 0 and nAbsorbMax > 0)
 	wndMaxShield:Show(nHealthCurr > 0 and nShieldMax > 0)
 
@@ -1394,6 +1407,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_Full selected
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
+			Print(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax) -- debug, prints correctly
 			wnd:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
 		else
 			wnd:SetText(nHealthCurr.."/"..nHealthMax)
@@ -1445,7 +1459,6 @@ end
 function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
 	-- Only update text if we are showing the shield bar
 	if not self.settings.ShowShieldBar then
-		Print("Returning")
 		return
 	end
 	
