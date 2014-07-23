@@ -1309,9 +1309,12 @@ function BetterRaidFrames:NumRowsHelper()
 end
 
 function BetterRaidFrames:OnEnteredCombat(unit, bInCombat)
-	if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsVisible() and unit == GameLib.GetPlayerUnit() and self.wndMain:FindChild("RaidCustomizeLockInCombat"):IsChecked() then
+	if self.settings.bLockFrame then
+		return
+	end
+	if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsVisible() and unit == GameLib.GetPlayerUnit() and self.settings.bAutoLock_Combat then
 		self.wndRaidLockFrameBtn:SetCheck(bInCombat)
-		self:OnRaidLockFrameBtnToggle(self.wndRaidLockFrameBtn, self.wndRaidLockFrameBtn)
+		self:LockFrameHelper(bInCombat)
 	end
 end
 
