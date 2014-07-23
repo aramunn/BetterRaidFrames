@@ -786,6 +786,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		-- We're appending on the raid member name which is the default text overlay
 		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
 		self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember)
+		self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember)
 	end
 end
 
@@ -1495,6 +1496,37 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
 	-- Only ShowShield_K selected
 	if self.settings.bShowShield_K and not self.settings.bShowShield_Pct then
 		wnd:SetText(strShieldCurrRounded)
+		return
+	end
+end
+
+function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember)
+	-- Only update text if we are showing the shield bar
+	if not self.settings.bShowAbsorbBar then
+		return
+	end
+	
+	local wnd = tRaidMember.wndCurrAbsorbBar
+	local strAbsorbCurrRounded
+
+	if nAbsorbCurr > 0 then
+		if nAbsorbCurr < 1000 then
+			strAbsorbCurrRounded = nAbsorbCurr
+		else
+			strAbsorbCurrRounded = self:RoundNumber(nAbsorbCurr)
+		end
+	else
+		strAbsorbCurrRounded = "" -- empty string to remove text when there is no absorb
+	end
+
+	-- No text needs to be drawn if all absorb text options are disabled
+	if not self.settings.bShowAbsorb_K then
+		wnd:SetText(nil)
+		return
+	end
+
+	if self.settings.bShowAbsorb_K then
+		wnd:SetText(strAbsorbCurrRounded)
 		return
 	end
 end
