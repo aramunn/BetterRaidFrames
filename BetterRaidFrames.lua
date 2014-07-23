@@ -1458,7 +1458,7 @@ end
 
 function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
 	-- Only update text if we are showing the shield bar
-	if not self.settings.ShowShieldBar then
+	if not self.settings.bShowShieldBar then
 		return
 	end
 	
@@ -1477,20 +1477,20 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
 	end
 
 	-- No text needs to be drawn if all Shield Text options are disabled
-	if not self.settings.ShowShield_K and not self.settings.ShowShield_Pct then
+	if not self.settings.bShowShield_K and not self.settings.bShowShield_Pct then
 		-- Update text to be empty, otherwise it will be stuck at the old value
 		wnd:SetText(nil)
 		return
 	end
 
 	-- Only Pct selected
-	if not self.settings.ShowShield_K and self.settings.ShowShield_Pct then
+	if not self.settings.bShowShield_K and self.settings.bShowShield_Pct then
 		wnd:SetText(strShieldPercentage)
 		return
 	end
 
 	-- Only ShowShield_K selected
-	if self.settings.ShowShield_K and not self.settings.ShowShield_Pct then
+	if self.settings.bShowShield_K and not self.settings.bShowShield_Pct then
 		wnd:SetText(strShieldCurrRounded)
 		return
 	end
