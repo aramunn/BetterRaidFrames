@@ -612,6 +612,13 @@ function BetterRaidFrames:UpdateAllMembers()
 	for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
 		local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 		local tMemberData = GroupLib.GetGroupMember(idx)
+		
+		-- Debug
+		local strCharacterName = tMemberData.strCharacterName
+		local Rover = Apollo.GetAddon("Rover")
+		Rover:AddWatch(strCharacterName.."tMemberData", tMemberData, 1)
+		Rover:AddWatch(strCharacterName.."tRaidMember", tRaidMember, 1)
+		
 
 		-- Update bar art if dead -> no longer dead
 		self:UpdateBarArt(tMemberData, tRaidMember)
@@ -633,7 +640,10 @@ function BetterRaidFrames:UpdateAllMembers()
 			end
 			wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitCurr:GetHealth() > 0 and unitCurr:GetMaxHealth() > 0)			
 		end
-
+		
+		-- Scaling
+		self:ResizeBars(tRaidMember)
+		
 		if not tMemberData.bIsOnline or tMemberData.nHealthMax == 0 or tMemberData.nHealth == 0 then
 			nInvalidOrDeadMembers = nInvalidOrDeadMembers + 1
 		end
@@ -736,6 +746,8 @@ function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
 end
 
 function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
+    --Print(debug.traceback())
+
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 
 	local bOutOfRange = tMemberData.nHealthMax == 0
@@ -792,7 +804,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		-- We're appending on the raid member name which is the default text overlay
 		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
 		self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember)
-	end	
+	end
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
@@ -811,7 +823,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 	local unitTarget = self.unitTarget
 
-	tRaidMember.wndHealthBar:Show(false)
+	tRaidMember.wndHealthBar:Show(true) -- originally false
 	tRaidMember.wndMaxAbsorbBar:Show(false)
 	tRaidMember.wndMaxShieldBar:Show(false)
 	tRaidMember.wndCurrShieldBar:Show(false)
@@ -819,6 +831,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
 
+	local bOutOfRange = tMemberData.nHealthMax == 0
+	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+	
 	self:UpdateBarArt(tMemberData, tRaidMember)
 	
 	local bShowClassIcon = self.settings.bShowIcon_Class
@@ -919,6 +934,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			wndManaBar:SetProgress(tMemberData.nMana)			
 		end
 		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitCurr:GetHealth() > 0 and unitCurr:GetMaxHealth() > 0)
+		
+		-- Scaling
+		self:ResizeBars(tRaidMember)
 	end
 	self:ResizeMemberFrame(wndRaidMember)
 end
@@ -1363,13 +1381,15 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 
 	local wndCurrHealthBar = tRaidMember.wndCurrHealthBar
 	self:SetBarValue(wndCurrHealthBar, 0, nHealthCurr, nHealthMax)
-	
-	-- Scaling
-	local nWidth = wndMemberBtn:GetWidth() - 4
-	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
+end
 
-	-- Offset parameters are Left, top, right and bottom
-	-- Example usage for HP/Shield -> To have the start of the shield bar align with the end of the HP bar, Shield-Left must be HP-Right.
+function BetterRaidFrames:ResizeBars(tRaidMember)
+	local nWidth = tRaidMember.wndRaidMemberBtn:GetWidth() - 4
+	local wndHealthBar = tRaidMember.wndHealthBar
+	local wndMaxAbsorb = tRaidMember.wndMaxAbsorbBar
+	local wndMaxShield = tRaidMember.wndMaxShieldBar
+	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
+	
 	wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.7, nBottom)
 	wndMaxShield:SetAnchorOffsets(nWidth * 0.7, nTop, nWidth * 0.87, nBottom)
 	wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.87, nTop, nWidth, nBottom)
