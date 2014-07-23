@@ -746,27 +746,30 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_Disconnect")
 		if self.settings.bShowNames then
-			tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
+			Print("Showing names - offline user")
+			Print(tostring(tRaidMember.wndHealthBar:IsShown()))
+			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
 		else
-			tRaidMember.wndRaidMemberName:SetText(nil)
+			Print("NOT Showing names - offline user")
+			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
 	elseif bDead then
 		wndMemberBtn:Enable(true)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
 		if self.settings.bShowNames then
-			tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
+			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
 		else
-			tRaidMember.wndRaidMemberName:SetText(nil)
+			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
 	elseif bOutOfRange then
 		wndMemberBtn:Enable(false)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_OutOfRange")
 		if self.settings.bShowNames then
-			tRaidMember.wndRaidMemberName:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
+			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
 		else
-			tRaidMember.wndRaidMemberName:SetText(nil)
+			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
 	else
 		wndMemberBtn:Enable(true)
@@ -776,6 +779,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
 		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
+		self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember)
 	end	
 end
 
@@ -803,8 +807,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
 	self:UpdateBarArt(tMemberData, tRaidMember)
-	-- always show, for text overlay, is set to nil if no need to display anything
-	tRaidMember.wndRaidMemberName:Show(true)
 	
 	local bShowClassIcon = self.settings.bShowIcon_Class
 	local wndClassIcon = tRaidMember.wndRaidMemberClassIcon
@@ -1352,7 +1354,7 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 	-- Scaling
 	local nWidth = wndMemberBtn:GetWidth() - 4
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
-	
+
 	-- Offset parameters are Left, top, right and bottom
 	-- Example usage for HP/Shield -> To have the start of the shield bar align with the end of the HP bar, Shield-Left must be HP-Right.
 	wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.7, nBottom)
@@ -1361,14 +1363,14 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, unitPlayer)
 end
 
 function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, strCharacterName)
-	local wndRaidMemberName = tRaidMember.wndRaidMemberName
+	local wnd = tRaidMember.wndCurrHealthBar
 	-- No text needs to be drawn if all HP Text options are disabled
 	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		-- Update text to be empty, otherwise it will be stuck at the old value
 		if self.settings.bShowNames then
-			wndRaidMemberName:SetText(strCharacterName)
+			wnd:SetText(strCharacterName)
 		else
-			wndRaidMemberName:SetText(nil)
+			wnd:SetText(nil)
 		end
 		return
 	end
@@ -1392,9 +1394,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_Full selected
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wndRaidMemberName:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
+			wnd:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
 		else
-			wndRaidMemberName:SetText(nHealthCurr.."/"..nHealthMax)
+			wnd:SetText(nHealthCurr.."/"..nHealthMax)
 		end
 		return
 	end
@@ -1402,9 +1404,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- ShowHP_Full + Pct
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wndRaidMemberName:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
+			wnd:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
 		else
-			wndRaidMemberName:SetText(nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
+			wnd:SetText(nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
 		end
 		return
 	end
@@ -1412,9 +1414,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_K selected
 	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wndRaidMemberName:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded)
+			wnd:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded)
 		else
-			wndRaidMemberName:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded)
+			wnd:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded)
 		end
 		return
 	end
@@ -1422,9 +1424,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- ShowHP_K + Pct
 	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wndRaidMemberName:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
+			wnd:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
 		else
-			wndRaidMemberName:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
+			wnd:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
 		end
 		return
 	end
@@ -1432,10 +1434,51 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only Pct selected
 	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wndRaidMemberName:SetText(strCharacterName.." - "..strHealthPercentage)
+			wnd:SetText(strCharacterName.." - "..strHealthPercentage)
 		else
-			wndRaidMemberName:SetText(strHealthPercentage)
+			wnd:SetText(strHealthPercentage)
 		end
+		return
+	end
+end
+
+function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
+	-- Only update text if we are showing the shield bar
+	if not self.settings.ShowShieldBar then
+		Print("Returning")
+		return
+	end
+	
+	local wnd = tRaidMember.wndCurrShieldBar
+	local strShieldPercentage = self:RoundPercentage(nShieldCurr, nShieldMax)
+	local strShieldCurrRounded
+
+	if nShieldCurr > 0 then
+		if nShieldCurr < 1000 then
+			strShieldCurrRounded = nShieldCurr
+		else
+			strShieldCurrRounded = self:RoundNumber(nShieldCurr)
+		end
+	else
+		strShieldCurrRounded = "" -- empty string to remove text when there is no shield
+	end
+
+	-- No text needs to be drawn if all Shield Text options are disabled
+	if not self.settings.ShowShield_K and not self.settings.ShowShield_Pct then
+		-- Update text to be empty, otherwise it will be stuck at the old value
+		wnd:SetText(nil)
+		return
+	end
+
+	-- Only Pct selected
+	if not self.settings.ShowShield_K and self.settings.ShowShield_Pct then
+		wnd:SetText(strShieldPercentage)
+		return
+	end
+
+	-- Only ShowShield_K selected
+	if self.settings.ShowShield_K and not self.settings.ShowShield_Pct then
+		wnd:SetText(strShieldCurrRounded)
 		return
 	end
 end
@@ -1488,7 +1531,6 @@ function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
 			wndRaidMemberMouseHack = wndNew:FindChild("RaidMemberBtn:RaidMemberMouseHack"),
 			wndRaidMemberStatusIcon = wndNew:FindChild("RaidMemberBtn:RaidMemberStatusIcon"),
 			wndRaidTearOffBtn = wndNew:FindChild("RaidTearOffBtn"),
-			wndRaidMemberName = wndNew:FindChild("RaidMemberName"),
 			wndRaidMemberClassIcon = wndNew:FindChild("RaidMemberClassIcon"),
 			wndRaidMemberIsLeader = wndNew:FindChild("RaidMemberIsLeader"),
 			wndRaidMemberRoleIcon = wndNew:FindChild("RaidMemberRoleIcon"),
