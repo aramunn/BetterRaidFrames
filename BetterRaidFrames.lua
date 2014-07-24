@@ -612,13 +612,14 @@ function BetterRaidFrames:UpdateAllMembers()
 	for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
 		local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 		local tMemberData = GroupLib.GetGroupMember(idx)
+		local unitMember = GroupLib.GetUnitForGroupMember(idx)
 
 		-- Update bar art if dead -> no longer dead
-		self:UpdateBarArt(tMemberData, tRaidMember)
+		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		
 		-- HP and Shields
 		if tMemberData then
-			local bTargetThisMember = unitTarget and unitTarget == GroupLib.GetUnitForGroupMember(idx)
+			local bTargetThisMember = unitTarget and unitTarget == unitMember
 			local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
 			wndMemberBtn:SetCheck(bTargetThisMember)
 			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
@@ -738,10 +739,10 @@ function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
 	wndRaidOptions:SetAnchorOffsets(nLeft, nTop, nRight, nTop + wndRaidOptions:ArrangeChildrenVert(0))
 end
 
-function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
+function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 
-	local bOutOfRange = tMemberData.nHealthMax == 0
+	local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
 	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
 	
 	if not tMemberData.bIsOnline then
@@ -749,6 +750,11 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloRedBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_Disconnect")
 		tRaidMember.wndHealthBar:SetSprite("")
+		tRaidMember.wndCurrHealthBar:SetFullSprite("")
+		tRaidMember.wndMaxShieldBar:SetSprite("")
+		tRaidMember.wndMaxAbsorbBar:SetSprite("")
+		tRaidMember.wndCurrShieldBar:SetFullSprite("")
+		tRaidMember.wndCurrAbsorbBar:SetFullSprite("")
 
 		if self.settings.bShowNames then
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
@@ -771,6 +777,11 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("CRB_Raid:sprRaid_Icon_OutOfRange")
 		tRaidMember.wndHealthBar:SetSprite("")
+		tRaidMember.wndCurrHealthBar:SetFullSprite("")
+		tRaidMember.wndMaxShieldBar:SetSprite("")
+		tRaidMember.wndMaxAbsorbBar:SetSprite("")
+		tRaidMember.wndCurrShieldBar:SetFullSprite("")
+		tRaidMember.wndCurrAbsorbBar:SetFullSprite("")
 		
 		if self.settings.bShowNames then
 			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
@@ -782,13 +793,16 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
 		tRaidMember.wndHealthBar:SetSprite("CRB_Raid:sprRaid_ShieldEmptyBar")
+		tRaidMember.wndCurrHealthBar:SetFullSprite("BasicSprites:WhiteFill")
+		tRaidMember.wndCurrShieldBar:SetFullSprite("BasicSprites:WhiteFill")
+		tRaidMember.wndCurrAbsorbBar:SetFullSprite("BasicSprites:WhiteFill")
 
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
 		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
-		self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember)
-		self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember)
 	end
+	self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
+	self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
@@ -817,8 +831,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	local bOutOfRange = tMemberData.nHealthMax == 0
 	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
-	
-	self:UpdateBarArt(tMemberData, tRaidMember)
+	local unitMember = GroupLib.GetUnitForGroupMember(idx) -- returns nil when out of range
+
+	self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 	
 	local bShowClassIcon = self.settings.bShowIcon_Class
 	local wndClassIcon = tRaidMember.wndRaidMemberClassIcon
@@ -903,7 +918,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	-- HP and Shields
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if tMemberData then
-		local bTargetThisMember = unitTarget and unitTarget == GroupLib.GetUnitForGroupMember(idx)
+		local bTargetThisMember = unitTarget and unitTarget == unitMember
 		local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
 		wndMemberBtn:SetCheck(bTargetThisMember)
 		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
@@ -1463,7 +1478,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	end
 end
 
-function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
+function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember, bOutOfRange)
 	-- Only update text if we are showing the shield bar
 	if not self.settings.bShowShieldBar then
 		return
@@ -1473,7 +1488,7 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
 	local strShieldPercentage = self:RoundPercentage(nShieldCurr, nShieldMax)
 	local strShieldCurrRounded
 
-	if nShieldCurr > 0 then
+	if nShieldCurr > 0 and not bOutOfRange then
 		if nShieldCurr < 1000 then
 			strShieldCurrRounded = nShieldCurr
 		else
@@ -1503,7 +1518,7 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember)
 	end
 end
 
-function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember)
+function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange)
 	-- Only update text if we are showing the shield bar
 	if not self.settings.bShowAbsorbBar then
 		return
@@ -1512,7 +1527,7 @@ function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember)
 	local wnd = tRaidMember.wndCurrAbsorbBar
 	local strAbsorbCurrRounded
 
-	if nAbsorbCurr > 0 then
+	if nAbsorbCurr > 0 and not bOutOfRange then
 		if nAbsorbCurr < 1000 then
 			strAbsorbCurrRounded = nAbsorbCurr
 		else
