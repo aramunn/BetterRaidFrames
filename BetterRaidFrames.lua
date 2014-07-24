@@ -831,7 +831,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	local bOutOfRange = tMemberData.nHealthMax == 0
 	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
-	local unitMember = GroupLib.GetUnitForGroupMember(idx) -- returns nil when out of range
+	local unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
 
 	self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 	
