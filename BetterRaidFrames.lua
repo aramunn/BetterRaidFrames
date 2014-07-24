@@ -1485,10 +1485,16 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember,
 	end
 	
 	local wnd = tRaidMember.wndCurrShieldBar
+	
+	if bOutOfRange then
+		wnd:SetText(nil)
+		return
+	end
+	
 	local strShieldPercentage = self:RoundPercentage(nShieldCurr, nShieldMax)
 	local strShieldCurrRounded
 
-	if nShieldCurr > 0 and not bOutOfRange then
+	if nShieldCurr > 0 then
 		if nShieldCurr < 1000 then
 			strShieldCurrRounded = nShieldCurr
 		else
@@ -1525,9 +1531,15 @@ function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange
 	end
 	
 	local wnd = tRaidMember.wndCurrAbsorbBar
+	
+	if bOutOfRange then
+		wnd:SetText(nil)
+		return
+	end
+
 	local strAbsorbCurrRounded
 
-	if nAbsorbCurr > 0 and not bOutOfRange then
+	if nAbsorbCurr > 0 then
 		if nAbsorbCurr < 1000 then
 			strAbsorbCurrRounded = nAbsorbCurr
 		else
