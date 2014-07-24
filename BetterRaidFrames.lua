@@ -548,7 +548,7 @@ function BetterRaidFrames:BuildAllFrames()
 		local wndRaidCategoryName = tCategory.wndRaidCategoryName
 		local wndRaidCategoryItems = tCategory.wndRaidCategoryItems
 
-		wndRaidCategoryBtn:Show(not self.wndRaidLockFrameBtn:IsChecked())
+		wndRaidCategoryBtn:Show(not bFrameLocked)
 		if wndRaidCategoryName:GetText() == "" then
 			wndRaidCategoryName:SetText(" " .. strCurrCategory)
 		end
@@ -1285,6 +1285,7 @@ function BetterRaidFrames:LockFrameHelper(bLock)
 	else
 		self.wndMain:SetSprite("sprRaid_Base")
 	end
+	self:BuildAllFrames()
 end
 
 function BetterRaidFrames:NumColumnsHelper()
