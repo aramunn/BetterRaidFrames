@@ -622,6 +622,7 @@ function BetterRaidFrames:UpdateAllMembers()
 			local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
 			wndMemberBtn:SetCheck(bTargetThisMember)
 			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
+			self:DoHPAndShieldResizing(tRaidMember, tMemberData)
 
 			-- Mana Bar
 			local bShowManaBar = self.settings.bShowFocus
@@ -1751,4 +1752,3 @@ end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
-
