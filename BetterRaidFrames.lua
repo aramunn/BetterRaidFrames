@@ -1393,9 +1393,9 @@ function BetterRaidFrames:ResizeBars(tRaidMember)
 	local wndMaxShield = tRaidMember.wndMaxShieldBar
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
 	
-	wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.7, nBottom)
-	wndMaxShield:SetAnchorOffsets(nWidth * 0.7, nTop, nWidth * 0.87, nBottom)
-	wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.87, nTop, nWidth, nBottom)
+	wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.67, nBottom)
+	wndMaxShield:SetAnchorOffsets(nWidth * 0.67, nTop, nWidth * 0.85, nBottom)
+	wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.85, nTop, nWidth, nBottom)
 end
 
 function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, strCharacterName)
