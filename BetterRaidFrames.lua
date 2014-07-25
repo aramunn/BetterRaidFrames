@@ -634,7 +634,7 @@ function BetterRaidFrames:UpdateAllMembers()
 				wndManaBar:SetMax(tMemberData.nManaMax)
 				wndManaBar:SetProgress(tMemberData.nMana)			
 			end
-			wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitCurr:GetHealth() > 0 and unitCurr:GetMaxHealth() > 0)			
+			wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitMember and unitMember:GetHealth() > 0 and unitMember:GetMaxHealth() > 0)			
 		end
 		
 		-- Scaling
@@ -938,7 +938,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			wndManaBar:SetMax(tMemberData.nManaMax)
 			wndManaBar:SetProgress(tMemberData.nMana)			
 		end
-		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitCurr:GetHealth() > 0 and unitCurr:GetMaxHealth() > 0)
+		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitMember and unitMember:GetHealth() > 0 and unitMember:GetMaxHealth() > 0)
 		
 		-- Scaling
 		self:ResizeBars(tRaidMember)
