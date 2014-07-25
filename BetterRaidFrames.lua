@@ -786,7 +786,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndCurrAbsorbBar:SetFullSprite("")
 		
 		if self.settings.bShowNames then
-			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OutOfRange"), tMemberData.strCharacterName))
+			tRaidMember.wndCurrHealthBar:SetText("  "..tMemberData.strCharacterName.." (OoR)")
 		else
 			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
