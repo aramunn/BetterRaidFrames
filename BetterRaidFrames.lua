@@ -617,6 +617,32 @@ function BetterRaidFrames:UpdateAllMembers()
 		-- Update bar art if dead -> no longer dead
 		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		
+		-- Ready Check
+		local bMemberReadyProcessed = tRaidMember.wndRaidMemberStatusIcon:GetData() == tMemberData.strCharacterName -- has this player already added his ready state?
+		if self.nNumReadyCheckResponses >= 0 and not bMemberReadyProcessed then
+			local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
+			if tMemberData.bHasSetReady and tMemberData.bReady then
+				self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
+				wndReadyCheckIcon:SetText(Apollo.GetString("RaidFrame_Ready"))
+				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
+				tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+			elseif tMemberData.bHasSetReady and not tMemberData.bReady then
+				self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
+				wndReadyCheckIcon:SetText("")
+				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
+				tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+			else
+				wndReadyCheckIcon:SetText("")
+				wndReadyCheckIcon:SetSprite("")
+			end
+			wndReadyCheckIcon:Show(true)
+			--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
+
+			if self.nNumReadyCheckResponses == nGroupMemberCount then
+				self:OnReadyCheckTimeout()
+			end
+		end
+
 		-- HP and Shields
 		if tMemberData then
 			local bTargetThisMember = unitTarget and unitTarget == unitMember
@@ -893,16 +919,19 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	wndMarkIcon:Show(bShowMarkIcon and nMarkIdx ~= 0)
 
 	-- Ready Check
-	if self.nNumReadyCheckResponses >= 0 then
+	local bMemberReadyProcessed = tRaidMember.wndRaidMemberStatusIcon:GetData() == tMemberData.strCharacterName -- has this player already added his ready state?
+	if self.nNumReadyCheckResponses >= 0 and not bMemberReadyProcessed then
 		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
 		if tMemberData.bHasSetReady and tMemberData.bReady then
 			self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 			wndReadyCheckIcon:SetText(Apollo.GetString("RaidFrame_Ready"))
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
+			tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
 		elseif tMemberData.bHasSetReady and not tMemberData.bReady then
 			self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 			wndReadyCheckIcon:SetText("")
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
+			tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
 		else
 			wndReadyCheckIcon:SetText("")
 			wndReadyCheckIcon:SetSprite("")
@@ -1069,15 +1098,19 @@ end
 -----------------------------------------------------------------------------------------------
 
 function BetterRaidFrames:OnStartReadyCheckBtn(wndHandler, wndControl) -- StartReadyCheckBtn
+	Print(tostring(self.bReadyCheckActive))
 	if not self.bReadyCheckActive then
 		local strMessage = self.wndMain:FindChild("RaidOptions:SelfConfigReadyCheckLabel:ReadyCheckMessageBG:ReadyCheckMessageEditBox"):GetText()
 		if string.len(strMessage) <= 0 then
 			strMessage = Apollo.GetString("RaidFrame_AreYouReady")
 		end
-
-		GroupLib.ReadyCheck(strMessage) -- Sanitized in code
+		local ReadyCheck = GroupLib.ReadyCheck(strMessage) -- Sanitized in code
 		self.wndMain:FindChild("RaidConfigureBtn"):SetCheck(false)
 		wndHandler:SetFocus() -- To remove out of edit box
+		if not ReadyCheck then
+			Print("Old ready check still pending")
+			return
+		end
 		self.bReadyCheckActive = true
 	end
 end
@@ -1108,6 +1141,7 @@ function BetterRaidFrames:OnGroup_ReadyCheck(nMemberIdx, strMessage)
 	self.bReadyCheckActive = true
 
 	Apollo.CreateTimer("ReadyCheckTimeout", knReadyCheckTimeout, false)
+	Print("Timer made for "..knReadyCheckTimeout.." seconds")
 end
 
 function BetterRaidFrames:OnReadyCheckResponse(wndHandler, wndControl)
@@ -1121,6 +1155,7 @@ function BetterRaidFrames:OnReadyCheckResponse(wndHandler, wndControl)
 end
 
 function BetterRaidFrames:OnReadyCheckTimeout()
+	Print("Timeout trigger")
 	self.nNumReadyCheckResponses = -1
 
 	if self.wndReadyCheckPopup and self.wndReadyCheckPopup:IsValid() then
@@ -1133,17 +1168,17 @@ function BetterRaidFrames:OnReadyCheckTimeout()
 			if wndMember:FindChild("RaidMemberReadyIcon") and wndMember:FindChild("RaidMemberReadyIcon"):IsValid() then
 				if wndMember:FindChild("RaidMemberReadyIcon"):GetText() ~= Apollo.GetString("RaidFrame_Ready") then
 					if strMembersNotReady == "" then
-						strMembersNotReady = wndMember:FindChild("RaidMemberName"):GetText()
+						strMembersNotReady = wndMember:FindChild("RaidMemberStatusIcon"):GetData()
 					else
-						strMembersNotReady = String_GetWeaselString(Apollo.GetString("RaidFrame_NotReadyList"), strMembersNotReady, wndMember:FindChild("RaidMemberName"):GetText())
+						strMembersNotReady = String_GetWeaselString(Apollo.GetString("RaidFrame_NotReadyList"), strMembersNotReady, wndMember:FindChild("RaidMemberStatusIcon"):GetData())
 					end
 				end
 				--wndMember:FindChild("RaidMemberReadyIcon"):Destroy()
 				wndMember:FindChild("RaidMemberReadyIcon"):Show(false)
 			elseif strMembersNotReady == "" then
-				strMembersNotReady = wndMember:FindChild("RaidMemberName"):GetText()
+				strMembersNotReady = wndMember:FindChild("RaidMemberStatusIcon"):GetData()
 			else
-				strMembersNotReady = String_GetWeaselString(Apollo.GetString("RaidFrame_NotReadyList"), strMembersNotReady, wndMember:FindChild("RaidMemberName"):GetText())
+				strMembersNotReady = String_GetWeaselString(Apollo.GetString("RaidFrame_NotReadyList"), strMembersNotReady, wndMember:FindChild("RaidMemberStatusIcon"):GetData())
 			end
 		end
 	end
