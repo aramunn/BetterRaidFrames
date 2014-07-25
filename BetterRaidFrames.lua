@@ -1405,7 +1405,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		-- Update text to be empty, otherwise it will be stuck at the old value
 		if self.settings.bShowNames then
-			wnd:SetText(strCharacterName)
+			wnd:SetText(" "..strCharacterName)
 		else
 			wnd:SetText(nil)
 		end
@@ -1431,9 +1431,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_Full selected
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
+			wnd:SetText(" "..strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
 		else
-			wnd:SetText(nHealthCurr.."/"..nHealthMax)
+			wnd:SetText(" "..nHealthCurr.."/"..nHealthMax)
 		end
 		return
 	end
@@ -1441,9 +1441,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- ShowHP_Full + Pct
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(strCharacterName.." - "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
+			wnd:SetText(" "..strCharacterName.." - "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
 		else
-			wnd:SetText(nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
+			wnd:SetText(" "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
 		end
 		return
 	end
@@ -1451,9 +1451,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_K selected
 	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded)
+			wnd:SetText(" "..strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded)
 		else
-			wnd:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded)
+			wnd:SetText(" "..strHealthCurrRounded.."/"..strHealthMaxRounded)
 		end
 		return
 	end
@@ -1461,9 +1461,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- ShowHP_K + Pct
 	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
+			wnd:SetText(" "..strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
 		else
-			wnd:SetText(strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
+			wnd:SetText(" "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
 		end
 		return
 	end
@@ -1471,9 +1471,9 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only Pct selected
 	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(strCharacterName.." - "..strHealthPercentage)
+			wnd:SetText(" "..strCharacterName.." - "..strHealthPercentage)
 		else
-			wnd:SetText(strHealthPercentage)
+			wnd:SetText(" "..strHealthPercentage)
 		end
 		return
 	end
