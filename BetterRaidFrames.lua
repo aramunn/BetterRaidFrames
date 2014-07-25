@@ -630,9 +630,16 @@ function BetterRaidFrames:UpdateAllMembers()
 			-- Mana Bar
 			local bShowManaBar = self.settings.bShowFocus
 			local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
-			if bShowManaBar and tMemberData.nManaMax and tMemberData.nManaMax > 0 then			
-				wndManaBar:SetMax(tMemberData.nManaMax)
-				wndManaBar:SetProgress(tMemberData.nMana)			
+
+			if bShowManaBar and tMemberData.nMana and tMemberData.nMana > 0 then
+				local nManaMax
+				if tMemberData.nManaMax	<= 0 then
+					nManaMax = 1000
+				else
+					nManaMax = tMemberData.nManaMax
+				end
+				wndManaBar:SetMax(nManaMax)
+				wndManaBar:SetProgress(tMemberData.nMana)	
 			end
 			wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitMember and unitMember:GetHealth() > 0 and unitMember:GetMaxHealth() > 0)			
 		end
@@ -934,9 +941,15 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		-- Mana Bar
 		local bShowManaBar = self.settings.bShowFocus
 		local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
-		if bShowManaBar and tMemberData.nManaMax and tMemberData.nManaMax > 0 then			
-			wndManaBar:SetMax(tMemberData.nManaMax)
-			wndManaBar:SetProgress(tMemberData.nMana)			
+		if bShowManaBar and tMemberData.nMana and tMemberData.nMana > 0 then
+			local nManaMax
+			if tMemberData.nManaMax	<= 0 then
+				nManaMax = 1000
+			else
+				nManaMax = tMemberData.nManaMax
+			end
+			wndManaBar:SetMax(nManaMax)
+			wndManaBar:SetProgress(tMemberData.nMana)	
 		end
 		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitMember and unitMember:GetHealth() > 0 and unitMember:GetMaxHealth() > 0)
 		
