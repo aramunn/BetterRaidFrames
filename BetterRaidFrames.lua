@@ -806,6 +806,9 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndCurrShieldBar:SetFullSprite("BasicSprites:WhiteFill")
 		tRaidMember.wndCurrAbsorbBar:SetFullSprite("BasicSprites:WhiteFill")
 
+		-- Change the HP Bar Color if required for debuff tracking
+		self:TrackDebuffsHelper(unitMember, tRaidMember)
+		
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
 		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
@@ -1607,6 +1610,37 @@ function BetterRaidFrames:SetBarValue(wndBar, fMin, fValue, fMax)
 	wndBar:SetMax(fMax)
 	wndBar:SetFloor(fMin)
 	wndBar:SetProgress(fValue)
+end
+
+function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
+	local wnd = tRaidMember.wndCurrHealthBar
+
+	-- Only continue if we are required to TrackDebuffs according to the settings
+	if not self.settings.bTrackDebuffs then
+		wnd:SetBarColor("ff26a614")
+		return
+	end
+
+	local playerBuffs = unitMember:GetBuffs()
+	local debuffs = playerBuffs['arHarmful']	
+    	
+	-- If player has no debuffs, change the color to normal in case it was changed before.
+	if next(debuffs) == nil then
+		wnd:SetBarColor('ff26a614')
+		return
+	end
+	
+	-- Loop through all debuffs. Change HP bar color if class of splEffect equals 38, which means it is dispellable
+	for key, value in pairs(debuffs) do
+		if value['splEffect']:GetClass() == 38 then
+			wnd:SetBarColor('xkcdDarkishPurple')
+			return
+		end
+	end
+
+	-- Reset to normal sprite if there were debuffs but none of them were dispellable.
+	-- This might happen in cases where a player had a dispellable debuff -and- a non-dispellable debuff on him
+	wnd:SetBarColor('ff26a614')
 end
 
 function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
