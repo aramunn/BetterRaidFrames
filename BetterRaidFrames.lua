@@ -818,7 +818,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
-	if not tRaidMember or not tRaidMember.wnd then
+	if not tRaidMember or not tRaidMember.wnd or not tMemberData then
 		return
 	end
 	local wndRaidMember = tRaidMember.wnd
