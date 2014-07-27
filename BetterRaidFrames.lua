@@ -588,7 +588,11 @@ function BetterRaidFrames:UpdateAllMembers()
 		local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 		local tMemberData = GroupLib.GetGroupMember(idx)
 		local unitMember = GroupLib.GetUnitForGroupMember(idx)
-
+		
+		-- Status variables
+		local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
+		local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+		
 		-- Update bar art if dead -> no longer dead
 		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		
@@ -641,11 +645,11 @@ function BetterRaidFrames:UpdateAllMembers()
 				wndManaBar:SetMax(nManaMax)
 				wndManaBar:SetProgress(tMemberData.nMana)	
 			end
-			wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitMember and unitMember:GetHealth() > 0 and unitMember:GetMaxHealth() > 0)			
+			wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange)			
 		end
 		
 		-- Scaling
-		self:ResizeBars(tRaidMember)
+		self:ResizeBars(tRaidMember, bDead)
 		
 		if not tMemberData.bIsOnline or tMemberData.nHealthMax == 0 or tMemberData.nHealth == 0 then
 			nInvalidOrDeadMembers = nInvalidOrDeadMembers + 1
@@ -954,10 +958,10 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			wndManaBar:SetMax(nManaMax)
 			wndManaBar:SetProgress(tMemberData.nMana)	
 		end
-		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange and unitMember and unitMember:GetHealth() > 0 and unitMember:GetMaxHealth() > 0)
+		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange)
 		
 		-- Scaling
-		self:ResizeBars(tRaidMember)
+		self:ResizeBars(tRaidMember, bDead)
 	end
 	self:ResizeMemberFrame(wndRaidMember)
 end
@@ -1413,7 +1417,7 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, tMemberData)
 	self:SetBarValue(wndCurrHealthBar, 0, nHealthCurr, nHealthMax)
 end
 
-function BetterRaidFrames:ResizeBars(tRaidMember)
+function BetterRaidFrames:ResizeBars(tRaidMember, bDead)
 	local nWidth = tRaidMember.wndRaidMemberBtn:GetWidth() - 4
 	local wndHealthBar = tRaidMember.wndHealthBar
 	local wndMaxAbsorb = tRaidMember.wndMaxAbsorbBar
@@ -1421,8 +1425,8 @@ function BetterRaidFrames:ResizeBars(tRaidMember)
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
 	
 	-- Define offsets based on settings of which bars to show
-	wndMaxShield:Show(self.settings.bShowShieldBar)
-	wndMaxAbsorb:Show(self.settings.bShowAbsorbBar)
+	wndMaxShield:Show(self.settings.bShowShieldBar and not bDead)
+	wndMaxAbsorb:Show(self.settings.bShowAbsorbBar and not bDead)
 	if self.settings.bShowShieldBar and self.settings.bShowAbsorbBar then
 		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.67, nBottom)
 		wndMaxShield:SetAnchorOffsets(nWidth * 0.67, nTop, nWidth * 0.85, nBottom)
