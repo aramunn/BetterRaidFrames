@@ -838,9 +838,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	local unitTarget = self.unitTarget
 
 	tRaidMember.wndHealthBar:Show(true)
-	tRaidMember.wndMaxAbsorbBar:Show(false)
-	tRaidMember.wndMaxShieldBar:Show(false)
-	tRaidMember.wndCurrShieldBar:Show(false)
+	tRaidMember.wndMaxAbsorbBar:Show(tMemberData.nHealth > 0 and tMemberData.nHealthMax > 0)
+	tRaidMember.wndMaxShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
+	tRaidMember.wndCurrShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
 	tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
 
 	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
@@ -1397,23 +1397,29 @@ function BetterRaidFrames:DoHPAndShieldResizing(tRaidMember, tMemberData)
 		nAbsorbCurr = tMemberData.nAbsorption -- Since it doesn't clear when the buff drops off
 	end
 	local nTotalMax = nHealthMax + nShieldMax + nAbsorbMax
+	
+	-- Status variables
+	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
 
 	-- Bars
 	local wndHealthBar = tRaidMember.wndHealthBar
 	local wndMaxAbsorb = tRaidMember.wndMaxAbsorbBar
 	local wndMaxShield = tRaidMember.wndMaxShieldBar
-	wndHealthBar:Show(true)
-	wndMaxAbsorb:Show(nHealthCurr > 0 and nAbsorbMax > 0)
-	wndMaxShield:Show(nHealthCurr > 0 and nShieldMax > 0)
-
 	local wndCurrShieldBar = tRaidMember.wndCurrShieldBar
-	wndCurrShieldBar:Show(nHealthCurr > 0 and nShieldMax > 0)
-	self:SetBarValue(wndCurrShieldBar, 0, nShieldCurr, nShieldMax)
-
 	local wndCurrAbsorbBar = tRaidMember.wndCurrAbsorbBar
-	self:SetBarValue(wndCurrAbsorbBar, 0, nAbsorbCurr, nAbsorbMax)
-
 	local wndCurrHealthBar = tRaidMember.wndCurrHealthBar
+
+	wndHealthBar:Show(true)
+	wndMaxAbsorb:Show(not bDead and self.settings.bShowAbsorbBar)
+	wndMaxShield:Show(not bDead and nShieldMax > 0 and self.settings.bShowShieldBar)
+	wndCurrShieldBar:Show(not bDead and nShieldMax > 0 and self.settings.bShowShieldBar)
+	
+	if self.settings.bShowShieldBar then
+		self:SetBarValue(wndCurrShieldBar, 0, nShieldCurr, nShieldMax)
+	end
+	if self.settings.bShowAbsorbBar then
+		self:SetBarValue(wndCurrAbsorbBar, 0, nAbsorbCurr, nAbsorbMax)
+	end
 	self:SetBarValue(wndCurrHealthBar, 0, nHealthCurr, nHealthMax)
 end
 
@@ -1425,8 +1431,6 @@ function BetterRaidFrames:ResizeBars(tRaidMember, bDead)
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
 	
 	-- Define offsets based on settings of which bars to show
-	wndMaxShield:Show(self.settings.bShowShieldBar and not bDead)
-	wndMaxAbsorb:Show(self.settings.bShowAbsorbBar and not bDead)
 	if self.settings.bShowShieldBar and self.settings.bShowAbsorbBar then
 		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.67, nBottom)
 		wndMaxShield:SetAnchorOffsets(nWidth * 0.67, nTop, nWidth * 0.85, nBottom)
