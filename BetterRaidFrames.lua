@@ -152,6 +152,8 @@ local DefaultSettings = {
 	bTrackDebuffs = false,
 	bShowShieldBar = true,
 	bShowAbsorbBar = true,
+	bMouseOverSelection = false,
+	bRememberPrevTarget = false,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -364,6 +366,10 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfig:FindChild("Button_ShowShieldBar"):SetCheck(self.settings.bShowShieldBar) end
 	if self.settings.bShowAbsorbBar ~= nil then
 		self.wndConfig:FindChild("Button_ShowAbsorbBar"):SetCheck(self.settings.bShowAbsorbBar) end
+	if self.settings.bMouseOverSelection ~= nil then
+		self.wndConfig:FindChild("Button_MouseOverSelection"):SetCheck(self.settings.bMouseOverSelection) end
+	if self.settings.bRememberPrevTarget ~= nil then
+		self.wndConfig:FindChild("Button_RememberPrevTarget"):SetCheck(self.settings.bRememberPrevTarget) end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -1794,6 +1800,35 @@ end
 -- RaidMember Functions
 ---------------------------------------------------------------------------------------------------
 
+function BetterRaidFrames:RaidMemberBtn_OnMouseEnter( wndHandler, wndControl, x, y )
+	if not wndControl or not self.settings.bMouseOverSelection then
+		return
+	end
+	
+	if wndControl:GetName() == "RaidMemberMouseHack" then
+		if self.settings.bRememberPrevTarget and not self.bOldTargetSet then
+			self.PrevTarget = GameLib.GetTargetUnit()
+			self.bOldTargetSet = true
+		end
+
+		local idx = wndControl:GetData()
+		local unit = GroupLib.GetUnitForGroupMember(idx)
+		if unit ~= nil then
+			GameLib.SetTargetUnit(unit)
+		end
+	end
+end
+
+function BetterRaidFrames:RaidMemberBtn_OnMouseExit( wndHandler, wndControl, x, y )
+	if not wndHandler or not wndControl or not self.settings.bMouseOverSelection or not self.settings.bRememberPrevTarget or not self.bOldTargetSet then
+		return
+	end
+	if wndHandler == wndControl then
+		GameLib.SetTargetUnit(self.PrevTarget)
+		self.bOldTargetSet = false
+	end
+end
+
 ---------------------------------------------------------------------------------------------------
 -- ConfigForm Functions
 ---------------------------------------------------------------------------------------------------
@@ -1853,14 +1888,29 @@ end
 
 function BetterRaidFrames:Button_ShowShieldBar( wndHandler, wndControl, eMouseButton )
 	self.settings.bShowShieldBar = wndControl:IsChecked()
-	-- TODO add call to function that resizes our bars appropriately depending on settings of which bars to show.
 end
 
 function BetterRaidFrames:Button_ShowAbsorbBar( wndHandler, wndControl, eMouseButton )
 	self.settings.bShowAbsorbBar = wndControl:IsChecked()
-	-- TODO add call to function that resizes our bars appropriately depending on settings of which bars to show.
+end
+
+function BetterRaidFrames:Button_MouseOverSelection( wndHandler, wndControl, eMouseButton )
+	self.settings.bMouseOverSelection = wndControl:IsChecked()
+	if not self.settings.bMouseOverSelection then
+		self.wndConfig:FindChild("Button_RememberPrevTarget"):SetCheck(false)
+		self.settings.bRememberPrevTarget = false
+	end
+end
+
+function BetterRaidFrames:Button_RememberPrevTarget( wndHandler, wndControl, eMouseButton )
+	self.settings.bRememberPrevTarget = wndControl:IsChecked()
+	if not self.settings.bMouseOverSelection and self.settings.bRememberPrevTarget then
+		self.wndConfig:FindChild("Button_MouseOverSelection"):SetCheck(true)
+		self.settings.bMouseOverSelection = true
+	end
 end
 
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
+
