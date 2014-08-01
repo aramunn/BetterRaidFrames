@@ -241,8 +241,6 @@ function BetterRaidFrames:OnDocumentReady()
 	Apollo.RegisterEventHandler("VarChange_FrameCount", 					"OnRaidFrameBaseTimer", self)
 	Apollo.RegisterEventHandler("ChangeWorld", 								"OnChangeWorld", self)
 	
-	Apollo.LoadSprites("BRF.xml")
-	
 	-- Required for saving frame location across sessions
 	Apollo.RegisterEventHandler("WindowManagementReady", 	"OnWindowManagementReady", self)
 	
@@ -829,9 +827,9 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		wndMemberBtn:ChangeArt("CRB_Raid:btnRaid_ThinHoloBlueBtn")
 		tRaidMember.wndRaidMemberStatusIcon:SetSprite("")
 		tRaidMember.wndHealthBar:SetSprite("CRB_Raid:sprRaid_ShieldEmptyBar")
-		tRaidMember.wndCurrHealthBar:SetFullSprite("BRF:SmoothBar")
-		tRaidMember.wndCurrShieldBar:SetFullSprite("BRF:SmoothBar")
-		tRaidMember.wndCurrAbsorbBar:SetFullSprite("BRF:SmoothBar")
+		tRaidMember.wndCurrHealthBar:SetFullSprite("BasicSprites:WhiteFill")
+		tRaidMember.wndCurrShieldBar:SetFullSprite("BasicSprites:WhiteFill")
+		tRaidMember.wndCurrAbsorbBar:SetFullSprite("BasicSprites:WhiteFill")
 
 		-- Change the HP Bar Color if required for debuff tracking
 		self:TrackDebuffsHelper(unitMember, tRaidMember)
@@ -1669,7 +1667,7 @@ function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
 
 	-- Only continue if we are required to TrackDebuffs according to the settings
 	if not self.settings.bTrackDebuffs then
-		wnd:SetBarColor("ff0ee73f")
+		wnd:SetBarColor("ff26a614")
 		return
 	end
 
@@ -1678,7 +1676,7 @@ function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
     	
 	-- If player has no debuffs, change the color to normal in case it was changed before.
 	if next(debuffs) == nil then
-		wnd:SetBarColor('ff0ee73f')
+		wnd:SetBarColor('ff26a614')
 		return
 	end
 	
@@ -1692,7 +1690,7 @@ function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
 
 	-- Reset to normal sprite if there were debuffs but none of them were dispellable.
 	-- This might happen in cases where a player had a dispellable debuff -and- a non-dispellable debuff on him
-	wnd:SetBarColor('ff0ee73f')
+	wnd:SetBarColor('ff26a614')
 end
 
 function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
