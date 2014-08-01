@@ -1098,7 +1098,7 @@ function BetterRaidFrames:OnMasterLootUpdate()
 	local tMasterLoot = GameLib.GetMasterLoot()
 	local bShowMasterLoot = tMasterLoot and #tMasterLoot > 0
 	local nLeft, nTop, nRight, nBottom = self.wndRaidTitle:GetAnchorOffsets()
-	self.wndRaidTitle:SetAnchorOffsets(bShowMasterLoot and 40 or 12, nTop, nRight, nBottom)
+	self.wndRaidTitle:SetAnchorOffsets(bShowMasterLoot and 40 or 10, nTop, nRight, nBottom)
 
 	self.wndGroupBagBtn:Show(bShowMasterLoot)
 end
