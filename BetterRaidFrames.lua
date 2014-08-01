@@ -154,6 +154,7 @@ local DefaultSettings = {
 	bShowAbsorbBar = true,
 	bMouseOverSelection = false,
 	bRememberPrevTarget = false,
+	bTransparency = false,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -370,6 +371,8 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfig:FindChild("Button_MouseOverSelection"):SetCheck(self.settings.bMouseOverSelection) end
 	if self.settings.bRememberPrevTarget ~= nil then
 		self.wndConfig:FindChild("Button_RememberPrevTarget"):SetCheck(self.settings.bRememberPrevTarget) end
+	if self.settings.bTransparency ~= nil then
+		self.wndConfig:FindChild("Button_Transparency"):SetCheck(self.settings.bTransparency) end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -1910,6 +1913,9 @@ function BetterRaidFrames:Button_RememberPrevTarget( wndHandler, wndControl, eMo
 	end
 end
 
+function BetterRaidFrames:Button_SetTransparency( wndHandler, wndControl, eMouseButton )
+	self.settings.bTransparency = wndControl:IsChecked()
+end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
