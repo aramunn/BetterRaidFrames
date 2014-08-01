@@ -372,7 +372,7 @@ function BetterRaidFrames:RefreshSettings()
 	if self.settings.bRememberPrevTarget ~= nil then
 		self.wndConfig:FindChild("Button_RememberPrevTarget"):SetCheck(self.settings.bRememberPrevTarget) end
 	if self.settings.bTransparency ~= nil then
-		self.wndConfig:FindChild("Button_Transparency"):SetCheck(self.settings.bTransparency) end
+		self.wndConfig:FindChild("Button_SetTransparency"):SetCheck(self.settings.bTransparency) end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -515,7 +515,7 @@ function BetterRaidFrames:BuildAllFrames()
 
 	local nInvalidOrDeadMembers = 0
 	local unitTarget = self.unitTarget
-	local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
+	local bFrameLocked = self.settings.bLockFrame or self.wndRaidLockFrameBtn:IsChecked()
 
 	for idx, tCurrMemberList in pairs(tMemberList) do
 		local tMemberData = tCurrMemberList[2]
@@ -554,6 +554,15 @@ function BetterRaidFrames:BuildAllFrames()
 	local bInInstanceSync = GroupLib.CanGotoGroupInstance()
 	self.wndRaidTitle:Show(not bInInstanceSync)
 	self.wndRaidWrongInstance:Show(bInInstanceSync)
+	
+	-- Update transparency settings
+	if self.settings.bTransparency then
+		self.wndMain:SetSprite("")
+	elseif self.settings.bLockFrame then
+		self.wndMain:SetSprite("sprRaid_BaseNoArrow")
+	elseif not self.settings.bLockFrame then
+		self.wndMain:SetSprite("sprRaid_Base")
+	end	
 end
 
 function BetterRaidFrames:UpdateLootRules()
@@ -1241,6 +1250,7 @@ end
 function BetterRaidFrames:OnRaidLockFrameBtnToggle(wndHandler, wndControl) -- RaidLockFrameBtn
 	self.settings.bLockFrame = wndHandler:IsChecked()
 	self:LockFrameHelper(self.settings.bLockFrame)
+	self:BuildAllFrames()
 end
 
 function BetterRaidFrames:OnRaidCustomizeNumColAdd(wndHandler, wndControl) -- RaidCustomizeNumColAdd, and once from bSwapToTwoColsOnce
@@ -1319,12 +1329,12 @@ function BetterRaidFrames:LockFrameHelper(bLock)
 	self.wndMain:SetStyle("Sizable", not bLock)
 	self.wndMain:SetStyle("Moveable", not bLock)
 	self.wndRaidLockFrameBtn:SetCheck(bLock)
-	if bLock then
+	
+	if bLock and not self.settings.bTransparency then
 		self.wndMain:SetSprite("sprRaid_BaseNoArrow")
-	else
+	elseif not bLock and not self.settings.bTransparency then
 		self.wndMain:SetSprite("sprRaid_Base")
 	end
-	self:BuildAllFrames()
 end
 
 function BetterRaidFrames:NumColumnsHelper()
@@ -1374,6 +1384,7 @@ function BetterRaidFrames:OnEnteredCombat(unit, bInCombat)
 	if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsVisible() and unit == GameLib.GetPlayerUnit() and self.settings.bAutoLock_Combat then
 		self.wndRaidLockFrameBtn:SetCheck(bInCombat)
 		self:LockFrameHelper(bInCombat)
+		self:BuildAllFrames()
 	end
 end
 
@@ -1915,6 +1926,7 @@ end
 
 function BetterRaidFrames:Button_SetTransparency( wndHandler, wndControl, eMouseButton )
 	self.settings.bTransparency = wndControl:IsChecked()
+	self:BuildAllFrames()
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
