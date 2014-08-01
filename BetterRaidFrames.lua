@@ -244,6 +244,9 @@ function BetterRaidFrames:OnDocumentReady()
 	-- Required for saving frame location across sessions
 	Apollo.RegisterEventHandler("WindowManagementReady", 	"OnWindowManagementReady", self)
 	
+	-- Load TearOff addon
+	self.BetterRaidFramesTearOff = Apollo.GetAddon("BetterRaidFramesTearOff")
+	
 	-- Sets the party frame location once windows are ready.
 	function BetterRaidFrames:OnWindowManagementReady()
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
@@ -1927,6 +1930,7 @@ end
 function BetterRaidFrames:Button_SetTransparency( wndHandler, wndControl, eMouseButton )
 	self.settings.bTransparency = wndControl:IsChecked()
 	self:BuildAllFrames()
+	self.BetterRaidFramesTearOff:BarTexturesHelper()
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
