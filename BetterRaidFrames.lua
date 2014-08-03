@@ -1248,6 +1248,11 @@ function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl) -- RaidMe
 	local unit = GroupLib.GetUnitForGroupMember(wndHandler:GetData())
 	if unit then
 		GameLib.SetTargetUnit(unit)
+		
+		if self.settings.bRememberPrevTarget then
+			self.PrevTarget = unit
+		end
+		
 		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 	end
 end
