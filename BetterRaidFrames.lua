@@ -155,6 +155,8 @@ local DefaultSettings = {
 	bMouseOverSelection = false,
 	bRememberPrevTarget = false,
 	bTransparency = false,
+	bCheckRange = false,
+	fMaxRange = 50,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -376,6 +378,12 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfig:FindChild("Button_RememberPrevTarget"):SetCheck(self.settings.bRememberPrevTarget) end
 	if self.settings.bTransparency ~= nil then
 		self.wndConfig:FindChild("Button_SetTransparency"):SetCheck(self.settings.bTransparency) end
+	if self.settings.bCheckRange ~= nil then
+		self.wndConfig:FindChild("Button_CheckRange"):SetCheck(self.settings.bCheckRange) end
+	if self.settings.fMaxRange ~= nil then
+		self.wndConfig:FindChild("Label_MaxRangeDisplay"):SetText(string.format("%sm", math.floor(self.settings.fMaxRange)))
+		self.wndConfig:FindChild("Slider_MaxRange"):SetValue(self.settings.fMaxRange)
+	end		
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -616,6 +624,9 @@ function BetterRaidFrames:UpdateAllMembers()
 		
 		-- Update bar art if dead -> no longer dead
 		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+		
+		-- Update opacity if out of range
+		self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
 		
 		-- Ready Check
 		local bMemberReadyProcessed = tRaidMember.wndRaidMemberStatusIcon:GetData() == tMemberData.strCharacterName -- has this player already added his ready state?
@@ -873,6 +884,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	local unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
 
 	self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+	
+	-- Update opacity if out of range
+	self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
 	
 	local bShowClassIcon = self.settings.bShowIcon_Class
 	local wndClassIcon = tRaidMember.wndRaidMemberClassIcon
@@ -1644,6 +1658,39 @@ function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange
 	end
 end
 
+function BetterRaidFrames:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
+	local opacity
+	
+	-- Use these variables to determine if opacity has to be set.
+	-- We use custom sprites, and no opacity change when OoR, dead, or offline
+	local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
+	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+	local bOffline = not tMemberData.bIsOnline
+	
+	if self.settings.bCheckRange and not bOutOfRange and not bDead and not bOffline then
+		local player = GameLib.GetPlayerUnit()
+		if player == nil then return end
+		
+		if unitMember ~= player and (unitMember == nil or not self:RangeCheck(unitMember, player, self.settings.fMaxRange)) then
+			opacity = 0.4
+		else
+			opacity = 1
+		end
+	end
+	tRaidMember.wndCurrHealthBar:SetOpacity(opacity)
+	tRaidMember.wndCurrShieldBar:SetOpacity(opacity)
+	tRaidMember.wndCurrAbsorbBar:SetOpacity(opacity)
+end
+
+function BetterRaidFrames:RangeCheck(unit1, unit2, range)
+	local v1 = unit1:GetPosition()
+	local v2 = unit2:GetPosition()
+	
+	local dx, dy, dz = v1.x - v2.x, v1.y - v2.y, v1.z - v2.z
+	
+	return dx*dx + dy*dy + dz*dz <= range*range
+end
+
 function BetterRaidFrames:RoundNumber(n)
 	local hundreds = math.floor(n / 100) % 10
 	if hundreds == 0 then
@@ -1937,6 +1984,17 @@ function BetterRaidFrames:Button_SetTransparency( wndHandler, wndControl, eMouse
 	self.settings.bTransparency = wndControl:IsChecked()
 	self:BuildAllFrames()
 	self.BetterRaidFramesTearOff:BarTexturesHelper()
+end
+
+
+function BetterRaidFrames:Button_CheckRange( wndHandler, wndControl, eMouseButton )
+	self.settings.bCheckRange = wndControl:IsChecked()
+end
+
+function BetterRaidFrames:Slider_MaxRange( wndHandler, wndControl, fNewValue, fOldValue )
+	if math.floor(fNewValue) == math.floor(fOldValue) then return end
+	self.wndConfig:FindChild("Label_MaxRangeDisplay"):SetText(string.format("%sm", math.floor(fNewValue)))
+	self.settings.fMaxRange = math.floor(fNewValue)
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
