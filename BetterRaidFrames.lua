@@ -653,7 +653,7 @@ function BetterRaidFrames:UpdateAllMembers()
 			self:DoHPAndShieldResizing(tRaidMember, tMemberData)
 
 			-- Mana Bar
-			local bShowManaBar = self.settings.bShowFocus
+			local bShowManaBar = self.settings.bShowFocus and tMemberData.bHealer
 			local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
 
 			if bShowManaBar and tMemberData.nMana and tMemberData.nMana > 0 then
@@ -969,7 +969,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		self:DoHPAndShieldResizing(tRaidMember, tMemberData)
 
 		-- Mana Bar
-		local bShowManaBar = self.settings.bShowFocus
+		local bShowManaBar = self.settings.bShowFocus and tMemberData.bHealer
 		local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
 		if bShowManaBar and tMemberData.nMana and tMemberData.nMana > 0 then
 			local nManaMax
