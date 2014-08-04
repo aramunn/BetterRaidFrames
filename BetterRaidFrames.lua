@@ -400,19 +400,23 @@ function BetterRaidFrames:OnCharacterCreated()
 end
 
 function BetterRaidFrames:OnRaidFrameBaseTimer()
-	if not GroupLib.InRaid() or self.settings.bDisableFrames then
+	if not GroupLib.InRaid() then
 		if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsShown() then
 			self.wndMain:Show(false)
 		end
 		return
 	end
 
-	if not self.wndMain:IsShown() then
+	if self.settings.bDisableFrames then
+		self.wndMain:Show(false)
+	end
+	
+	if not self.wndMain:IsShown() and not self.settings.bDisableFrames then
 		self:OnMasterLootUpdate()
 		self.wndMain:Show(true)
 	end
 	if self.nDirtyFlag > knDirtyNone then
-		if bit32.btest(self.nDirtyFlag, knDirtyGeneral) then -- Rebuild everything
+		if bit32.btest(self.nDirtyFlag, knDirtyGeneral) and not self.settings.bDisableFrames then -- Rebuild everything
 			self:BuildAllFrames()
 			self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 		elseif bit32.btest(self.nDirtyFlag, knDirtyMembers) then -- Fully update all members
@@ -427,7 +431,7 @@ function BetterRaidFrames:OnRaidFrameBaseTimer()
 			self:UpdateLootRules()
 		end
 
-		if bit32.btest(self.nDirtyFlag, knDirtyResize) then
+		if bit32.btest(self.nDirtyFlag, knDirtyResize) and not self.settings.bDisableFrames then
 			self:ResizeAllFrames()
 			if self.settings.nNumColumns then -- This is terrible
 				self:ResizeAllFrames()
@@ -620,17 +624,24 @@ function BetterRaidFrames:UpdateAllMembers()
 	for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
 		local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 		local tMemberData = GroupLib.GetGroupMember(idx)
-		local unitMember = GroupLib.GetUnitForGroupMember(idx)
+		local unitMember
+		if not self.settings.bDisableFrames then
+		 	unitMember = GroupLib.GetUnitForGroupMember(idx)
+		end
 		
 		-- Status variables
 		local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
 		local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
 		
 		-- Update bar art if dead -> no longer dead
-		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+		if not self.settings.bDisableFrames then
+			self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+		end
 		
 		-- Update opacity if out of range
-		self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
+		if not self.settings.bDisableFrames then
+		 self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
+		end
 		
 		-- Ready Check
 		local bMemberReadyProcessed = tRaidMember.wndRaidMemberStatusIcon:GetData() == tMemberData.strCharacterName -- has this player already added his ready state?
@@ -658,41 +669,44 @@ function BetterRaidFrames:UpdateAllMembers()
 			wndReadyCheckIcon:Show(true)
 			--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 		end
-
-		-- HP and Shields
-		if tMemberData then
-			local bTargetThisMember = unitTarget and unitTarget == unitMember
-			local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
-			wndMemberBtn:SetCheck(bTargetThisMember)
-			tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
-			self:DoHPAndShieldResizing(tRaidMember, tMemberData)
-
-			-- Mana Bar
-			local bShowManaBar = self.settings.bShowFocus and tMemberData.bHealer
-			local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
-
-			if bShowManaBar and tMemberData.nMana and tMemberData.nMana > 0 then
-				local nManaMax
-				if tMemberData.nManaMax	<= 0 then
-					nManaMax = 1000
-				else
-					nManaMax = tMemberData.nManaMax
+		
+		if not self.settings.bDisableFrames then
+			-- HP and Shields
+			if tMemberData then
+				local bTargetThisMember = unitTarget and unitTarget == unitMember
+				local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
+				wndMemberBtn:SetCheck(bTargetThisMember)
+				tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
+				self:DoHPAndShieldResizing(tRaidMember, tMemberData)
+	
+				-- Mana Bar
+				local bShowManaBar = self.settings.bShowFocus and tMemberData.bHealer
+				local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
+	
+				if bShowManaBar and tMemberData.nMana and tMemberData.nMana > 0 then
+					local nManaMax
+					if tMemberData.nManaMax	<= 0 then
+						nManaMax = 1000
+					else
+						nManaMax = tMemberData.nManaMax
+					end
+					wndManaBar:SetMax(nManaMax)
+					wndManaBar:SetProgress(tMemberData.nMana)	
 				end
-				wndManaBar:SetMax(nManaMax)
-				wndManaBar:SetProgress(tMemberData.nMana)	
+				wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange)			
 			end
-			wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange)			
-		end
-		
-		-- Scaling
-		self:ResizeBars(tRaidMember, bDead)
-		
-		if not tMemberData.bIsOnline or tMemberData.nHealthMax == 0 or tMemberData.nHealth == 0 then
-			nInvalidOrDeadMembers = nInvalidOrDeadMembers + 1
+			
+			-- Scaling
+			self:ResizeBars(tRaidMember, bDead)
+			
+			if not tMemberData.bIsOnline or tMemberData.nHealthMax == 0 or tMemberData.nHealth == 0 then
+				nInvalidOrDeadMembers = nInvalidOrDeadMembers + 1
+			end
 		end
 	end
-
-	self.wndRaidTitle:SetText(String_GetWeaselString(Apollo.GetString("RaidFrame_MemberCount"), nGroupMemberCount - nInvalidOrDeadMembers, nGroupMemberCount))
+	if not self.settings.bDisableFrames then
+		self.wndRaidTitle:SetText(String_GetWeaselString(Apollo.GetString("RaidFrame_MemberCount"), nGroupMemberCount - nInvalidOrDeadMembers, nGroupMemberCount))
+	end
 end
 
 local kfnSortCategoryMembers = function(a, b)
@@ -868,86 +882,102 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		return
 	end
 	
-	-- Fix for flickering when icons in front of bars update
-	self:UpdateOffsets()
-	self:ResizeMemberFrame(wndRaidMember)
-
-	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
-	local unitTarget = self.unitTarget
-
-	tRaidMember.wndHealthBar:Show(true)
-	tRaidMember.wndMaxAbsorbBar:Show(tMemberData.nHealth > 0 and tMemberData.nHealthMax > 0)
-	tRaidMember.wndMaxShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
-	tRaidMember.wndCurrShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
-	tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
-
-	tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
-
-	local bOutOfRange = tMemberData.nHealthMax == 0
-	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
-	local unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
-
-	self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+	local wndMemberBtn
+	local unitTarget
+	local bOutOfRange
+	local bDead
+	local unitMember
+	local bShowClassIcon
+	local wndClassIcon
+	local bShowLeaderIcon
+	local wndLeaderIcon
+	local bShowRoleIcon
+	local wndRoleIcon
+	local bShowMarkIcon
+	local wndMarkIcon
 	
-	-- Update opacity if out of range
-	self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
+	if not self.settings.bDisableFrames then
+		-- Fix for flickering when icons in front of bars update
+		self:UpdateOffsets()
+		self:ResizeMemberFrame(wndRaidMember)
 	
-	local bShowClassIcon = self.settings.bShowIcon_Class
-	local wndClassIcon = tRaidMember.wndRaidMemberClassIcon
-	if bShowClassIcon then
-		wndClassIcon:SetSprite(ktIdToClassSprite[tMemberData.eClassId])
-		wndClassIcon:SetTooltip(Apollo.GetString(ktIdToClassTooltip[tMemberData.eClassId]))
-	end
-	wndClassIcon:Show(bShowClassIcon)
-
-	local nLeaderIdx = 0
-	local bShowLeaderIcon = self.settings.bShowIcon_Leader
-	local wndLeaderIcon = tRaidMember.wndRaidMemberIsLeader
-	if bShowLeaderIcon then
-		if tMemberData.bIsLeader then
-			nLeaderIdx = 1
-		elseif tMemberData.bMainTank then
-			nLeaderIdx = 2
-		elseif tMemberData.bMainAssist then
-			nLeaderIdx = 3
-		elseif tMemberData.bRaidAssistant then
-			nLeaderIdx = 4
+		wndMemberBtn = tRaidMember.wndRaidMemberBtn
+		unitTarget = self.unitTarget
+	
+		tRaidMember.wndHealthBar:Show(true)
+		tRaidMember.wndMaxAbsorbBar:Show(tMemberData.nHealth > 0 and tMemberData.nHealthMax > 0)
+		tRaidMember.wndMaxShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
+		tRaidMember.wndCurrShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
+		tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
+	
+		tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
+	
+		bOutOfRange = tMemberData.nHealthMax == 0
+		bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+		unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
+	
+		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+		
+		-- Update opacity if out of range
+		self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
+		
+		bShowClassIcon = self.settings.bShowIcon_Class
+		wndClassIcon = tRaidMember.wndRaidMemberClassIcon
+		if bShowClassIcon then
+			wndClassIcon:SetSprite(ktIdToClassSprite[tMemberData.eClassId])
+			wndClassIcon:SetTooltip(Apollo.GetString(ktIdToClassTooltip[tMemberData.eClassId]))
 		end
-		wndLeaderIcon:SetSprite(ktIdToLeaderSprite[nLeaderIdx])
-		wndLeaderIcon:SetTooltip(Apollo.GetString(ktIdToLeaderTooltip[nLeaderIdx]))
-	end
-	wndLeaderIcon:Show(bShowLeaderIcon and nLeaderIdx ~= 0)
-
-	local nRoleIdx = -1
-	local bShowRoleIcon = self.settings.bShowIcon_Role
-	local wndRoleIcon = tRaidMember.wndRaidMemberRoleIcon
-
-	if bShowRoleIcon then
-		if tMemberData.bDPS then
-			nRoleIdx = MatchingGame.Roles.DPS
-		elseif tMemberData.bHealer then
-			nRoleIdx = MatchingGame.Roles.Healer
-		elseif tMemberData.bTank then
-			nRoleIdx = MatchingGame.Roles.Tank
+		wndClassIcon:Show(bShowClassIcon)
+	
+		local nLeaderIdx = 0
+		bShowLeaderIcon = self.settings.bShowIcon_Leader
+		wndLeaderIcon = tRaidMember.wndRaidMemberIsLeader
+		if bShowLeaderIcon then
+			if tMemberData.bIsLeader then
+				nLeaderIdx = 1
+			elseif tMemberData.bMainTank then
+				nLeaderIdx = 2
+			elseif tMemberData.bMainAssist then
+				nLeaderIdx = 3
+			elseif tMemberData.bRaidAssistant then
+				nLeaderIdx = 4
+			end
+			wndLeaderIcon:SetSprite(ktIdToLeaderSprite[nLeaderIdx])
+			wndLeaderIcon:SetTooltip(Apollo.GetString(ktIdToLeaderTooltip[nLeaderIdx]))
 		end
-		local tPixieInfo = wndRoleIcon:GetPixieInfo(1)
-		if tPixieInfo then
-			tPixieInfo.strSprite = ktIdToRoleSprite[nRoleIdx]
-			wndRoleIcon:UpdatePixie(1, tPixieInfo)
+		wndLeaderIcon:Show(bShowLeaderIcon and nLeaderIdx ~= 0)
+	
+		local nRoleIdx = -1
+		bShowRoleIcon = self.settings.bShowIcon_Role
+		wndRoleIcon = tRaidMember.wndRaidMemberRoleIcon
+	
+		if bShowRoleIcon then
+			if tMemberData.bDPS then
+				nRoleIdx = MatchingGame.Roles.DPS
+			elseif tMemberData.bHealer then
+				nRoleIdx = MatchingGame.Roles.Healer
+			elseif tMemberData.bTank then
+				nRoleIdx = MatchingGame.Roles.Tank
+			end
+			local tPixieInfo = wndRoleIcon:GetPixieInfo(1)
+			if tPixieInfo then
+				tPixieInfo.strSprite = ktIdToRoleSprite[nRoleIdx]
+				wndRoleIcon:UpdatePixie(1, tPixieInfo)
+			end
+			--wndRoleIcon:SetSprite(ktIdToRoleSprite[nRoleIdx])
+			wndRoleIcon:SetTooltip(Apollo.GetString(ktIdToRoleTooltip[nRoleIdx]))
 		end
-		--wndRoleIcon:SetSprite(ktIdToRoleSprite[nRoleIdx])
-		wndRoleIcon:SetTooltip(Apollo.GetString(ktIdToRoleTooltip[nRoleIdx]))
+		wndRoleIcon:Show(bShowRoleIcon and nRoleIdx ~= -1)
+	
+		local nMarkIdx = 0
+		bShowMarkIcon = self.settings.bShowIcon_Mark
+		wndMarkIcon = tRaidMember.wndRaidMemberMarkIcon
+		if bShowMarkIcon then
+			nMarkIdx = tMemberData.nMarkerId or 0
+			wndMarkIcon:SetSprite(kstrRaidMarkerToSprite[nMarkIdx])
+		end
+		wndMarkIcon:Show(bShowMarkIcon and nMarkIdx ~= 0)
 	end
-	wndRoleIcon:Show(bShowRoleIcon and nRoleIdx ~= -1)
-
-	local nMarkIdx = 0
-	local bShowMarkIcon = self.settings.bShowIcon_Mark
-	local wndMarkIcon = tRaidMember.wndRaidMemberMarkIcon
-	if bShowMarkIcon then
-		nMarkIdx = tMemberData.nMarkerId or 0
-		wndMarkIcon:SetSprite(kstrRaidMarkerToSprite[nMarkIdx])
-	end
-	wndMarkIcon:Show(bShowMarkIcon and nMarkIdx ~= 0)
 	-- Ready Check
 	local bMemberReadyProcessed = tRaidMember.wndRaidMemberStatusIcon:GetData() == tMemberData.strCharacterName -- has this player already added his ready state?
 	if self.nNumReadyCheckResponses >= 0 and not bMemberReadyProcessed then
@@ -973,6 +1003,11 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		end
 		wndReadyCheckIcon:Show(true)
 		--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
+	end
+	
+	-- We can return at this point if we are hiding the frames and the ready check is processed
+	if self.settings.bDisableFrames then
+		return
 	end
 
 	-- HP and Shields
@@ -2010,6 +2045,7 @@ function BetterRaidFrames:Button_DisableRaidFrames( wndHandler, wndControl, eMou
 	if not self.settings.bDisableFrames then
 		-- Call TrackSavedCharacters in the TearOff frame after the MainUpdateTimer ran (1 sec to be sure)
 		Apollo.CreateTimer("TrackSavedCharactersTimer", 1, false)
+		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 	end
 end
 
