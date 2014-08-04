@@ -157,6 +157,7 @@ local DefaultSettings = {
 	bTransparency = false,
 	bCheckRange = false,
 	fMaxRange = 50,
+	bDisableFrames = false,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -383,7 +384,9 @@ function BetterRaidFrames:RefreshSettings()
 	if self.settings.fMaxRange ~= nil then
 		self.wndConfig:FindChild("Label_MaxRangeDisplay"):SetText(string.format("%sm", math.floor(self.settings.fMaxRange)))
 		self.wndConfig:FindChild("Slider_MaxRange"):SetValue(self.settings.fMaxRange)
-	end		
+	end
+	if self.settings.bDisableFrames ~= nil then
+		self.wndConfig:FindChild("Button_DisableFrames"):SetCheck(self.settings.bDisableFrames) end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -396,7 +399,7 @@ function BetterRaidFrames:OnCharacterCreated()
 end
 
 function BetterRaidFrames:OnRaidFrameBaseTimer()
-	if not GroupLib.InRaid() then
+	if not GroupLib.InRaid() or self.settings.bDisableFrames then
 		if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsShown() then
 			self.wndMain:Show(false)
 		end
@@ -1995,6 +1998,10 @@ function BetterRaidFrames:Slider_MaxRange( wndHandler, wndControl, fNewValue, fO
 	if math.floor(fNewValue) == math.floor(fOldValue) then return end
 	self.wndConfig:FindChild("Label_MaxRangeDisplay"):SetText(string.format("%sm", math.floor(fNewValue)))
 	self.settings.fMaxRange = math.floor(fNewValue)
+end
+
+function BetterRaidFrames:Button_DisableRaidFrames( wndHandler, wndControl, eMouseButton )
+	self.settings.bDisableFrames = wndControl:IsChecked()
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
