@@ -243,6 +243,7 @@ function BetterRaidFrames:OnDocumentReady()
 	Apollo.RegisterTimerHandler("ReadyCheckTimeout", 						"OnReadyCheckTimeout", self)
 	Apollo.RegisterEventHandler("VarChange_FrameCount", 					"OnRaidFrameBaseTimer", self)
 	Apollo.RegisterEventHandler("ChangeWorld", 								"OnChangeWorld", self)
+	Apollo.RegisterTimerHandler("TrackSavedCharactersTimer",				"TrackSavedCharacters", self)
 	
 	-- Required for saving frame location across sessions
 	Apollo.RegisterEventHandler("WindowManagementReady", 	"OnWindowManagementReady", self)
@@ -1694,6 +1695,10 @@ function BetterRaidFrames:RangeCheck(unit1, unit2, range)
 	return dx*dx + dy*dy + dz*dz <= range*range
 end
 
+function BetterRaidFrames:TrackSavedCharacters()
+	self.BetterRaidFramesTearOff:TrackSavedCharacters()
+end
+
 function BetterRaidFrames:RoundNumber(n)
 	local hundreds = math.floor(n / 100) % 10
 	if hundreds == 0 then
@@ -2002,6 +2007,10 @@ end
 
 function BetterRaidFrames:Button_DisableRaidFrames( wndHandler, wndControl, eMouseButton )
 	self.settings.bDisableFrames = wndControl:IsChecked()
+	if not self.settings.bDisableFrames then
+		-- Call TrackSavedCharacters in the TearOff frame after the MainUpdateTimer ran (1 sec to be sure)
+		Apollo.CreateTimer("TrackSavedCharactersTimer", 1, false)
+	end
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
