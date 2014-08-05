@@ -671,6 +671,10 @@ function BetterRaidFrames:UpdateAllMembers()
 			wndReadyCheckIcon:Show(true)
 			--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 		end
+		-- Change data back to nil when the ready check is no longer active.
+		if bMemberReadyProcessed and not self.bReadyCheckActive then
+			tRaidMember.wndRaidMemberStatusIcon:SetData(nil)
+		end
 		
 		if not self.settings.bDisableFrames then
 			-- HP and Shields
@@ -1007,6 +1011,10 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		end
 		wndReadyCheckIcon:Show(true)
 		--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
+	end
+	-- Change data back to nil when the ready check is no longer active.
+	if bMemberReadyProcessed and not self.bReadyCheckActive then
+		tRaidMember.wndRaidMemberStatusIcon:SetData(nil)
 	end
 	
 	-- We can return at this point if we are hiding the frames and the ready check is processed
