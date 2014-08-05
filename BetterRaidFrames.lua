@@ -216,10 +216,45 @@ function BetterRaidFrames:OnLoad()
 	
 	self.settings = self.settings or {}
 	setmetatable(self.settings, DefaultSettings)
+	
+	if Apollo.GetAddon("VikingContextMenuPlayer") ~= nil then
+	    self.contextMenuPlayer = Apollo.GetAddon("VikingContextMenuPlayer")
+	else
+	    self.contextMenuPlayer = Apollo.GetAddon("ContextMenuPlayer")
+	end
+    local oldRedrawAll = self.contextMenuPlayer.RedrawAll
+
+    self.contextMenuPlayer.RedrawAll = function(context)
+        if self.contextMenuPlayer.wndMain ~= nil then
+            local wndButtonList = self.contextMenuPlayer.wndMain:FindChild("ButtonList")
+            if wndButtonList ~= nil then
+                local wndNew = wndButtonList:FindChildByUserData(tObject)
+                if not wndNew then
+                    wndNew = Apollo.LoadForm(self.contextMenuPlayer.xmlDoc, "BtnRegular", wndButtonList, self.contextMenuPlayer)
+                    wndNew:SetData("Add to Focus Group")
+                end
+                wndNew:FindChild("BtnText"):SetText("Add to Focus Group")
+            end
+        end
+        oldRedrawAll(context)
+    end
+
+    -- catch the event fired when the player clicks the context menu
+    local oldProcessContextClick = self.contextMenuPlayer.ProcessContextClick
+    self.contextMenuPlayer.ProcessContextClick = function(context, eButtonType)
+        if eButtonType == "Add to Focus Group" then
+			local idx = self:CharacterToIdx(self.contextMenuPlayer.strTarget)
+			Event_FireGenericEvent("GenericEvent_Raid_ToggleRaidTearOff", idx)
+			self.tTearOffMemberIDs[idx] = true
+        else
+            oldProcessContextClick (context, eButtonType)
+        end
+    end
+
 end
 
 function BetterRaidFrames:OnDocumentReady()
-	if  self.xmlDoc == nil then
+	if self.xmlDoc == nil then
 		return
 	end
 	Apollo.RegisterEventHandler("CharacterCreated", 						"OnCharacterCreated", self)
@@ -688,7 +723,6 @@ function BetterRaidFrames:UpdateAllMembers()
 				local bTargetThisMember = unitTarget and unitTarget == unitMember
 				local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
 				wndMemberBtn:SetCheck(bTargetThisMember)
-				tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
 				self:DoHPAndShieldResizing(tRaidMember, tMemberData)
 	
 				-- Mana Bar
@@ -783,9 +817,6 @@ function BetterRaidFrames:ResizeMemberFrame(wndRaidMember)
 	end
 	if tRaidMember.wndRaidMemberMarkIcon:IsShown() then
 		nLeftOffset = nLeftOffset + tRaidMember.wndRaidMemberMarkIcon:GetWidth()
-	end
-	if tRaidMember.wndRaidTearOffBtn:IsShown() then
-		nLeftOffset = nLeftOffset + tRaidMember.wndRaidTearOffBtn:GetWidth()
 	end
 	if tRaidMember.wndRaidMemberReadyIcon:IsShown() then
 		-- GetWidth() is too much and leaves empty space.
@@ -926,8 +957,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		tRaidMember.wndCurrShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
 		tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
 	
-		tRaidMember.wndRaidTearOffBtn:SetData(nCodeIdx)
-	
 		bOutOfRange = tMemberData.nHealthMax == 0
 		bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
 		unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
@@ -1036,7 +1065,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		local bTargetThisMember = unitTarget and unitTarget == unitMember
 		local bFrameLocked = self.wndRaidLockFrameBtn:IsChecked()
 		wndMemberBtn:SetCheck(bTargetThisMember)
-		tRaidMember.wndRaidTearOffBtn:Show(bTargetThisMember and not bFrameLocked and not self.tTearOffMemberIDs[nCodeIdx] and not unitPlayer:IsInCombat())
 		
 		self:ResizeMemberFrame(wndRaidMember) -- Fix for flickering when icons in front of bars update
 		self:DoHPAndShieldResizing(tRaidMember, tMemberData)
@@ -1121,11 +1149,6 @@ function BetterRaidFrames:OnRaidConfigureToggle(wndHandler, wndControl) -- RaidC
 		Event_FireGenericEvent("GenericEvent_Raid_ToggleLeaderOptions", false)
 		self:RefreshSettings()
 	end
-end
-
-function BetterRaidFrames:OnRaidTearOffBtn(wndHandler, wndControl) -- RaidTearOffBtn
-	Event_FireGenericEvent("GenericEvent_Raid_ToggleRaidTearOff", wndHandler:GetData())
-	self.tTearOffMemberIDs[wndHandler:GetData()] = true
 end
 
 function BetterRaidFrames:OnRaidUnTearOff(wndArg) -- GenericEvent_Raid_ToggleRaidUnTear
@@ -1312,14 +1335,14 @@ function BetterRaidFrames:OnConfigSetAsHealerToggle(wndHandler, wndControl)
 	self.settings.bRole_Tank = false
 end
 
-function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl) -- RaidMemberMouseHack
+function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl, eMouseButton) -- RaidMemberMouseHack
 	-- GOTCHA: Use MouseUp instead of ButtonCheck to avoid weird edgecase bugs
 	if wndHandler ~= wndControl or not wndHandler or not wndHandler:GetData() then
 		return
 	end
 
 	local unit = GroupLib.GetUnitForGroupMember(wndHandler:GetData())
-	if unit then
+	if unit and eMouseButton == 0 then
 		GameLib.SetTargetUnit(unit)
 		
 		if self.settings.bRememberPrevTarget then
@@ -1327,6 +1350,10 @@ function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl) -- RaidMe
 		end
 		
 		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+	end
+	
+	if eMouseButton == 1 then
+		Event_FireGenericEvent("GenericEvent_NewContextMenuPlayerDetailed", wndHandler, unit:GetName(), unit)
 	end
 end
 
@@ -1809,6 +1836,18 @@ function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
 	wnd:SetBarColor('ff26a614')
 end
 
+function BetterRaidFrames:CharacterToIdx(strCharacterName)
+	local nGroupMemberCount = GroupLib.GetMemberCount()
+	for idx = 1, nGroupMemberCount do
+		local unitPlayer = GroupLib.GetGroupMember(idx)
+		if unitPlayer ~= nil then
+			if strCharacterName == unitPlayer.strCharacterName then
+				return idx
+			end
+		end
+	end
+end
+
 function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
 	if self.cache == nil then
 		self.cache = {}
@@ -1832,7 +1871,6 @@ function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
 			wndRaidMemberBtn = wndNew:FindChild("RaidMemberBtn"),
 			wndRaidMemberMouseHack = wndNew:FindChild("RaidMemberBtn:RaidMemberMouseHack"),
 			wndRaidMemberStatusIcon = wndNew:FindChild("RaidMemberBtn:RaidMemberStatusIcon"),
-			wndRaidTearOffBtn = wndNew:FindChild("RaidTearOffBtn"),
 			wndRaidMemberClassIcon = wndNew:FindChild("RaidMemberClassIcon"),
 			wndRaidMemberIsLeader = wndNew:FindChild("RaidMemberIsLeader"),
 			wndRaidMemberRoleIcon = wndNew:FindChild("RaidMemberRoleIcon"),
