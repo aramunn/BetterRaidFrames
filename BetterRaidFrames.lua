@@ -671,6 +671,10 @@ function BetterRaidFrames:UpdateAllMembers()
 			wndReadyCheckIcon:Show(true)
 			--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 		end
+		-- Fix bar flickering
+		self:UpdateOffsets()
+		self:ResizeMemberFrame(tRaidMember.wnd)
+		
 		-- Change data back to nil when the ready check is no longer active.
 		if bMemberReadyProcessed and not self.bReadyCheckActive then
 			tRaidMember.wndRaidMemberStatusIcon:SetData(nil)
@@ -709,8 +713,6 @@ function BetterRaidFrames:UpdateAllMembers()
 				nInvalidOrDeadMembers = nInvalidOrDeadMembers + 1
 			end
 		end
-		self:UpdateOffsets()
-		self:ResizeMemberFrame(tRaidMember.wnd)
 	end
 	if not self.settings.bDisableFrames then
 		self.wndRaidTitle:SetText(String_GetWeaselString(Apollo.GetString("RaidFrame_MemberCount"), nGroupMemberCount - nInvalidOrDeadMembers, nGroupMemberCount))
@@ -782,6 +784,10 @@ function BetterRaidFrames:ResizeMemberFrame(wndRaidMember)
 	end
 	if tRaidMember.wndRaidTearOffBtn:IsShown() then
 		nLeftOffset = nLeftOffset + tRaidMember.wndRaidTearOffBtn:GetWidth()
+	end
+	if tRaidMember.wndRaidMemberReadyIcon:IsShown() then
+		-- GetWidth() is too much and leaves empty space.
+		nLeftOffset = nLeftOffset + 3 --tRaidMember.wndRaidMemberReadyIcon:GetWidth()
 	end
 
 	-- Resize Button
