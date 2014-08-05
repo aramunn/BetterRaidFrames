@@ -671,9 +671,11 @@ function BetterRaidFrames:UpdateAllMembers()
 			wndReadyCheckIcon:Show(true)
 			--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 		end
-		-- Fix bar flickering
-		self:UpdateOffsets()
-		self:ResizeMemberFrame(tRaidMember.wnd)
+		if not self.settings.bDisableFrames then
+			-- Fix bar flickering
+			self:UpdateOffsets()
+			self:ResizeMemberFrame(tRaidMember.wnd)
+		end
 		
 		-- Change data back to nil when the ready check is no longer active.
 		if bMemberReadyProcessed and not self.bReadyCheckActive then
