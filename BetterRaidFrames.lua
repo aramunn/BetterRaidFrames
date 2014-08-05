@@ -486,7 +486,7 @@ end
 
 function BetterRaidFrames:OnGroup_MemberFlagsChanged(nMemberIdx, bFromPromotion, tChangedFlags)
 	if not GroupLib.InRaid() then return end
-	if not self.bReadyCheckActive then
+	if not tChangedFlags.bHasSetReady then
 		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 	end
 end
@@ -1280,9 +1280,6 @@ function BetterRaidFrames:OnConfigSetAsDPSToggle(wndHandler, wndControl)
 	self.settings.bRole_DPS = wndControl:IsChecked()
 	self.settings.bRole_Healer = false
 	self.settings.bRole_Tank = false
-	if self.bReadyCheckActive then
-		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
-	end
 end
 
 function BetterRaidFrames:OnConfigSetAsTankToggle(wndHandler, wndControl)
@@ -1290,9 +1287,6 @@ function BetterRaidFrames:OnConfigSetAsTankToggle(wndHandler, wndControl)
 	self.settings.bRole_DPS = false
 	self.settings.bRole_Healer = false
 	self.settings.bRole_Tank = wndControl:IsChecked()
-	if self.bReadyCheckActive then
-		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
-	end
 end
 
 function BetterRaidFrames:OnConfigSetAsHealerToggle(wndHandler, wndControl)
@@ -1300,9 +1294,6 @@ function BetterRaidFrames:OnConfigSetAsHealerToggle(wndHandler, wndControl)
 	self.settings.bRole_DPS = false
 	self.settings.bRole_Healer = wndControl:IsChecked()
 	self.settings.bRole_Tank = false
-	if self.bReadyCheckActive then
-		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
-	end
 end
 
 function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl) -- RaidMemberMouseHack
