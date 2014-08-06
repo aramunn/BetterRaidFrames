@@ -244,10 +244,14 @@ function BetterRaidFrames:OnLoad()
     self.contextMenuPlayer.ProcessContextClick = function(context, eButtonType)
         if eButtonType == "Add to Focus Group" then
 			local idx = self:CharacterToIdx(self.contextMenuPlayer.strTarget)
+			if not idx then
+				ChatSystemLib.PostOnChannel(2,"Error! You can only add people in your raid to the focus group.")
+				return
+			end
 			Event_FireGenericEvent("GenericEvent_Raid_ToggleRaidTearOff", idx)
 			self.tTearOffMemberIDs[idx] = true
         else
-            oldProcessContextClick (context, eButtonType)
+            oldProcessContextClick(context, eButtonType)
         end
     end
 
