@@ -1670,8 +1670,14 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember,
 	if not self.settings.bShowShieldBar then
 		return
 	end
-	
+
 	local wnd = tRaidMember.wndCurrShieldBar
+	-- No text needs to be drawn if all Shield Text options are disabled
+	if not self.settings.bShowShield_K and not self.settings.bShowShield_Pct then
+		-- Update text to be empty, otherwise it will be stuck at the old value
+		wnd:SetText(nil)
+		return
+	end
 	
 	if bOutOfRange then
 		wnd:SetText(nil)
@@ -1691,14 +1697,7 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember,
 		strShieldCurrRounded = "" -- empty string to remove text when there is no shield
 	end
 
-	-- No text needs to be drawn if all Shield Text options are disabled
-	if not self.settings.bShowShield_K and not self.settings.bShowShield_Pct then
-		-- Update text to be empty, otherwise it will be stuck at the old value
-		wnd:SetText(nil)
-		return
-	end
-
-	-- Only Pct selected
+		-- Only Pct selected
 	if not self.settings.bShowShield_K and self.settings.bShowShield_Pct then
 		wnd:SetText(strShieldPercentage)
 		return
@@ -1718,6 +1717,11 @@ function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange
 	end
 	
 	local wnd = tRaidMember.wndCurrAbsorbBar
+	-- No text needs to be drawn if all absorb text options are disabled
+	if not self.settings.bShowAbsorb_K then
+		wnd:SetText(nil)
+		return
+	end
 	
 	if bOutOfRange then
 		wnd:SetText(nil)
@@ -1734,12 +1738,6 @@ function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange
 		end
 	else
 		strAbsorbCurrRounded = "" -- empty string to remove text when there is no absorb
-	end
-
-	-- No text needs to be drawn if all absorb text options are disabled
-	if not self.settings.bShowAbsorb_K then
-		wnd:SetText(nil)
-		return
 	end
 
 	if self.settings.bShowAbsorb_K then
