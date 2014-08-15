@@ -210,9 +210,21 @@ function BetterRaidFrames:OnLoad()
 	-- Configured our forms
 	self.wndConfig = Apollo.LoadForm(self.xmlDoc, "ConfigForm", nil, self)
 	self.wndConfig:Show(false)
+	self.wndConfigColors = Apollo.LoadForm(self.xmlDoc, "ConfigColorsForm", nil, self)
+	self.wndConfigColors:Show(false)
+	
+	self.wndTargetFrame = self.wndConfigColors:FindChild("TargetFrame")
+	
+	self.wndConfigColorsGeneral = Apollo.LoadForm(self.xmlDoc, "ConfigColorsGeneral", self.wndTargetFrame, self)
+	self.wndConfigColorsEngineer = Apollo.LoadForm(self.xmlDoc, "ConfigColorsEngineer", self.wndTargetFrame, self)
+	self.wndConfigColorsEsper = Apollo.LoadForm(self.xmlDoc, "ConfigColorsEsper", self.wndTargetFrame, self)
+	self.wndConfigColorsMedic = Apollo.LoadForm(self.xmlDoc, "ConfigColorsMedic", self.wndTargetFrame, self)
+	self.wndConfigColorsSpellslinger = Apollo.LoadForm(self.xmlDoc, "ConfigColorsSpellslinger", self.wndTargetFrame, self)
+	self.wndConfigColorsStalker = Apollo.LoadForm(self.xmlDoc, "ConfigColorsStalker", self.wndTargetFrame, self)
+	self.wndConfigColorsWarrior = Apollo.LoadForm(self.xmlDoc, "ConfigColorsWarrior", self.wndTargetFrame, self)
 	
 	-- Register handler for slash commands that open the configuration form
-	Apollo.RegisterSlashCommand("brf", "OnConfigOn", self)
+	Apollo.RegisterSlashCommand("brf", "OnSlashCmd", self)
 	
 	self.settings = self.settings or {}
 	setmetatable(self.settings, DefaultSettings)
@@ -2107,6 +2119,93 @@ function BetterRaidFrames:Button_DisableRaidFrames( wndHandler, wndControl, eMou
 		Apollo.CreateTimer("TrackSavedCharactersTimer", 1, false)
 		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 	end
+end
+
+function BetterRaidFrames:CPrint(str)
+	ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Command, str, "")
+end
+
+function BetterRaidFrames:OnSlashCmd(sCmd, sInput)
+	local option = string.lower(sInput)
+	if option == nil or option == "" then
+		self:CPrint("Thanks for using BetterRaidFrames :)")
+		self:CPrint("/brf options - Options Menu")
+		self:CPrint("/brf colors - Customize Bar Colors")
+	elseif option == "options" then
+		self:OnConfigOn()
+	elseif option == "colors" then
+		self:OnConfigColorsOn()
+	end
+end
+
+---------------------------------------------------------------------------------------------------
+-- ConfigColorsForm Functions
+---------------------------------------------------------------------------------------------------
+
+function BetterRaidFrames:OnConfigColorsOn()
+	self:RefreshSettings()
+	self.wndConfigColors:Show(true)
+end
+
+function BetterRaidFrames:OnConfigColorsCloseButton( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColors:Show(false)
+end
+
+-- API for wndControl:IsChecked() updates too slowly so need separate uncheck handlers.. /sigh
+function BetterRaidFrames:Button_ColorSettingsGeneralCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsGeneral:Show(true)
+end
+
+function BetterRaidFrames:Button_ColorSettingsGeneralUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsGeneral:Show(false)
+end
+
+function BetterRaidFrames:Button_ColorSettingsEngineerCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsEngineer:Show(true)
+end
+
+function BetterRaidFrames:Button_ColorSettingsEngineerUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsEngineer:Show(false)
+end
+
+function BetterRaidFrames:Button_ColorSettingsEsperCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsEsper:Show(true)
+end
+
+function BetterRaidFrames:Button_ColorSettingsEsperUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsEsper:Show(false)
+end
+
+function BetterRaidFrames:Button_ColorSettingsMedicCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsMedic:Show(true)
+end
+
+function BetterRaidFrames:Button_ColorSettingsMedicUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsMedic:Show(false)
+end
+
+function BetterRaidFrames:Button_ColorSettingsSpellslingerCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsSpellslinger:Show(true)
+end
+
+function BetterRaidFrames:Button_ColorSettingsSpellslingerUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsSpellslinger:Show(false)
+end
+
+function BetterRaidFrames:Button_ColorSettingsStalkerCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsStalker:Show(true)
+end
+
+function BetterRaidFrames:Button_ColorSettingsStalkerUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsStalker:Show(false)
+end
+
+function BetterRaidFrames:Button_ColorSettingsWarriorCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsWarrior:Show(true)
+end
+
+function BetterRaidFrames:Button_ColorSettingsWarriorUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigColorsWarrior:Show(false)
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
