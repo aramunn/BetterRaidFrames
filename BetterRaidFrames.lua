@@ -172,9 +172,9 @@ local DefaultSettings = {
 	
 	-- Custom settings via /brf colors
 	strColorGeneral_HPHealthy = "ff26a614",
-	strColorGeneral_HPDebuff = "xkcdDarkishPurple",
+	strColorGeneral_HPDebuff = "ff8b008b",
 	strColorGeneral_Shield = "ff2574a9",
-	strColorGeneral_Absorb = "xkcdDirtyOrange",
+	strColorGeneral_Absorb = "ffca7819",
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -2265,6 +2265,20 @@ function BetterRaidFrames:OnColorReset( wndHandler, wndControl, eMouseButton )
 	self.settings[strCategorySettingKey] = DefaultSettings[strCategorySettingKey]
 end
 
+function BetterRaidFrames:OnColorClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	if wndHandler ~= wndControl or eMouseButton ~= GameLib.CodeEnumInputMouse.Left then return end
+	local strCategory = wndControl:GetParent():GetParent():GetParent():GetName()
+	local strIdentifier = wndControl:GetParent()
+	local strCategorySettingKey = ktCategoryToSettingKeyPrefix[strCategory]..strIdentifier:GetName()
+	self.GeminiColor:ShowColorPicker(self, {callback = "OnGeminiColor", bCustomColor = true, strInitialColor = self.settings[strCategorySettingKey]}, strCategory, strIdentifier, strCategorySettingKey)
+end
+
+function BetterRaidFrames:OnGeminiColor(strColor, strCategory, strIdentifier, strCategorySettingKey)
+	strIdentifier:FindChild("ColorWindow"):SetBGColor(strColor)
+	self.settings[strCategorySettingKey] = strColor
+end
+
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
+
 
