@@ -8,6 +8,17 @@ require "bit32"
 
 local BetterRaidFrames = {}
 
+local ktCategoryToSettingKeyPrefix =
+{
+	ConfigColorsGeneral			= "strColorGeneral_",
+	ConfigColorsEngineer		= "strColorEngineer_",
+	ConfigColorsEsper			= "strColorEsper_",
+	ConfigColorsMedic			= "strColorMedic_",
+	ConfigColorsSpellslinger	= "strColorSpellslinger_",
+	ConfigColorsStalker			= "strColorStalker_",
+	ConfigColorsWarrior			= "strColorWarrior_",
+}
+
 -- TODO: This should be enums (string comparison already fails on esper)
 local ktIdToClassSprite =
 {
@@ -142,7 +153,7 @@ local DefaultSettings = {
 	bRole_Healer		= false,
 	bRole_Tank			= false,
 	
-	-- Custom settings via /brf
+	-- Custom settings via /brf options
 	bShowHP_Full = false,
 	bShowHP_K = false,
 	bShowHP_Pct = false,
@@ -158,6 +169,12 @@ local DefaultSettings = {
 	bCheckRange = false,
 	fMaxRange = 50,
 	bDisableFrames = false,
+	
+	-- Custom settings via /brf colors
+	strColorGeneral_HPHealthy = "ff26a614",
+	strColorGeneral_HPDebuff = "xkcdDarkishPurple",
+	strColorGeneral_Shield = "ff2574a9",
+	strColorGeneral_Absorb = "xkcdDirtyOrange",
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -302,6 +319,9 @@ function BetterRaidFrames:OnDocumentReady()
 	-- Load TearOff addon
 	self.BetterRaidFramesTearOff = Apollo.GetAddon("BetterRaidFramesTearOff")
 	
+	-- GeminiColor
+	self.GeminiColor = Apollo.GetPackage("GeminiColor").tPackage
+	
 	-- Sets the party frame location once windows are ready.
 	function BetterRaidFrames:OnWindowManagementReady()
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
@@ -406,7 +426,7 @@ function BetterRaidFrames:RefreshSettings()
 	if self.settings.bAutoLock_Combat ~= nil then
 		self.wndRaidCustomizeLockInCombat:SetCheck(self.settings.bAutoLock_Combat) end
 
-	-- Settings related to /brf settings frame
+	-- Settings related to /brf options settings frame
 	if self.settings.bShowHP_Full ~= nil then
 		self.wndConfig:FindChild("Button_ShowHP_Full"):SetCheck(self.settings.bShowHP_Full) end
 	if self.settings.bShowHP_K ~= nil then
@@ -439,6 +459,16 @@ function BetterRaidFrames:RefreshSettings()
 	end
 	if self.settings.bDisableFrames ~= nil then
 		self.wndConfig:FindChild("Button_DisableFrames"):SetCheck(self.settings.bDisableFrames) end
+
+	-- Settings related to /brf colors settings frame
+	if self.settings.strColorGeneral_HPHealthy ~= nil then
+		self.wndConfigColorsGeneral:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorGeneral_HPHealthy) end
+	if self.settings.strColorGeneral_HPDebuff ~= nil then
+		self.wndConfigColorsGeneral:FindChild("Label_ColorSettingsOuter:HPDebuff:ColorWindow"):SetBGColor(self.settings.strColorGeneral_HPDebuff) end
+	if self.settings.strColorGeneral_Shield ~= nil then
+		self.wndConfigColorsGeneral:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorGeneral_Shield) end
+	if self.settings.strColorGeneral_Absorb ~= nil then
+		self.wndConfigColorsGeneral:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorGeneral_Absorb) end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -926,7 +956,9 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndCurrAbsorbBar:SetFullSprite("BasicSprites:WhiteFill")
 
 		-- Change the HP Bar Color if required for debuff tracking
-		self:TrackDebuffsHelper(unitMember, tRaidMember)
+		local DebuffColorRequired = self:TrackDebuffsHelper(unitMember, tRaidMember)
+		-- Update Bar Colors
+		self:UpdateBarColors(tRaidMember, DebuffColorRequired)
 		
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
@@ -1824,8 +1856,7 @@ function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
 
 	-- Only continue if we are required to TrackDebuffs according to the settings
 	if not self.settings.bTrackDebuffs then
-		wnd:SetBarColor("ff26a614")
-		return
+		return false
 	end
 
 	local playerBuffs = unitMember:GetBuffs()
@@ -1833,21 +1864,34 @@ function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
     	
 	-- If player has no debuffs, change the color to normal in case it was changed before.
 	if next(debuffs) == nil then
-		wnd:SetBarColor('ff26a614')
-		return
+		return false
 	end
 	
 	-- Loop through all debuffs. Change HP bar color if class of splEffect equals 38, which means it is dispellable
 	for key, value in pairs(debuffs) do
 		if value['splEffect']:GetClass() == 38 then
-			wnd:SetBarColor('xkcdDarkishPurple')
-			return
+			return true
 		end
 	end
 
 	-- Reset to normal sprite if there were debuffs but none of them were dispellable.
 	-- This might happen in cases where a player had a dispellable debuff -and- a non-dispellable debuff on him
-	wnd:SetBarColor('ff26a614')
+	return false
+end
+
+function BetterRaidFrames:UpdateBarColors(tRaidMember, DebuffColorRequired)
+	local wndHP = tRaidMember.wndCurrHealthBar
+	local wndShield = tRaidMember.wndCurrShieldBar
+	local wndAbsorb = tRaidMember.wndCurrAbsorbBar
+	
+	if DebuffColorRequired then
+		wndHP:SetBarColor(self.settings.strColorGeneral_HPDebuff)
+	else
+		wndHP:SetBarColor(self.settings.strColorGeneral_HPHealthy)
+	end
+	
+	wndShield:SetBarColor(self.settings.strColorGeneral_Shield)
+	wndAbsorb:SetBarColor(self.settings.strColorGeneral_Absorb)
 end
 
 function BetterRaidFrames:CharacterToIdx(strCharacterName)
@@ -2206,6 +2250,19 @@ end
 
 function BetterRaidFrames:Button_ColorSettingsWarriorUncheck( wndHandler, wndControl, eMouseButton )
 	self.wndConfigColorsWarrior:Show(false)
+end
+
+---------------------------------------------------------------------------------------------------
+-- ConfigColorsGeneral Functions
+---------------------------------------------------------------------------------------------------
+
+function BetterRaidFrames:OnColorReset( wndHandler, wndControl, eMouseButton )
+	if wndHandler ~= wndControl then return end
+	local strCategory = wndControl:GetParent():GetParent():GetParent():GetName()
+	local strIdentifier = wndControl:GetParent()
+	local strCategorySettingKey = ktCategoryToSettingKeyPrefix[strCategory]..strIdentifier:GetName()
+	strIdentifier:FindChild("ColorWindow"):SetBGColor(DefaultSettings[strCategorySettingKey])
+	self.settings[strCategorySettingKey] = DefaultSettings[strCategorySettingKey]
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
