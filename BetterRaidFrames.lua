@@ -171,10 +171,42 @@ local DefaultSettings = {
 	bDisableFrames = false,
 	
 	-- Custom settings via /brf colors
+	bClassSpecificBarColors = false,
+	
 	strColorGeneral_HPHealthy = "ff26a614",
 	strColorGeneral_HPDebuff = "ff8b008b",
 	strColorGeneral_Shield = "ff2574a9",
 	strColorGeneral_Absorb = "ffca7819",
+	
+	strColorEngineer_HPHealthy = "ff26a614",
+	strColorEngineer_HPDebuff = "ff8b008b",
+	strColorEngineer_Shield = "ff2574a9",
+	strColorEngineer_Absorb = "ffca7819",
+	
+	strColorEsper_HPHealthy = "ff26a614",
+	strColorEsper_HPDebuff = "ff8b008b",
+	strColorEsper_Shield = "ff2574a9",
+	strColorEsper_Absorb = "ffca7819",
+	
+	strColorMedic_HPHealthy = "ff26a614",
+	strColorMedic_HPDebuff = "ff8b008b",
+	strColorMedic_Shield = "ff2574a9",
+	strColorMedic_Absorb = "ffca7819",
+	
+	strColorSpellslinger_HPHealthy = "ff26a614",
+	strColorSpellslinger_HPDebuff = "ff8b008b",
+	strColorSpellslinger_Shield = "ff2574a9",
+	strColorSpellslinger_Absorb = "ffca7819",
+	
+	strColorStalker_HPHealthy = "ff26a614",
+	strColorStalker_HPDebuff = "ff8b008b",
+	strColorStalker_Shield = "ff2574a9",
+	strColorStalker_Absorb = "ffca7819",
+	
+	strColorWarrior_HPHealthy = "ff26a614",
+	strColorWarrior_HPDebuff = "ff8b008b",
+	strColorWarrior_Shield = "ff2574a9",
+	strColorWarrior_Absorb = "ffca7819",
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -460,6 +492,9 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfig:FindChild("Button_DisableFrames"):SetCheck(self.settings.bDisableFrames) end
 
 	-- Settings related to /brf colors settings frame
+	if self.settings.bClassSpecificBarColors ~= nil then
+		self.wndConfigColorsGeneral:FindChild("Label_GeneralSettingsOuter:Button_ClassSpecific"):SetCheck(self.settings.bClassSpecificBarColors) end
+	
 	if self.settings.strColorGeneral_HPHealthy ~= nil then
 		self.wndConfigColorsGeneral:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorGeneral_HPHealthy) end
 	if self.settings.strColorGeneral_HPDebuff ~= nil then
@@ -468,6 +503,60 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfigColorsGeneral:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorGeneral_Shield) end
 	if self.settings.strColorGeneral_Absorb ~= nil then
 		self.wndConfigColorsGeneral:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorGeneral_Absorb) end
+		
+	if self.settings.strColorEngineer_HPHealthy ~= nil then
+		self.wndConfigColorsEngineer:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorEngineer_HPHealthy) end
+	if self.settings.strColorEngineer_HPDebuff ~= nil then
+		self.wndConfigColorsEngineer:FindChild("Label_ColorSettingsOuter:HPDebuff:ColorWindow"):SetBGColor(self.settings.strColorEngineer_HPDebuff) end
+	if self.settings.strColorEngineer_Shield ~= nil then
+		self.wndConfigColorsEngineer:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorEngineer_Shield) end
+	if self.settings.strColorEngineer_Absorb ~= nil then
+		self.wndConfigColorsEngineer:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorEngineer_Absorb) end
+		
+	if self.settings.strColorEsper_HPHealthy ~= nil then
+		self.wndConfigColorsEsper:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorEsper_HPHealthy) end
+	if self.settings.strColorEsper_HPDebuff ~= nil then
+		self.wndConfigColorsEsper:FindChild("Label_ColorSettingsOuter:HPDebuff:ColorWindow"):SetBGColor(self.settings.strColorEsper_HPDebuff) end
+	if self.settings.strColorEsper_Shield ~= nil then
+		self.wndConfigColorsEsper:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorEsper_Shield) end
+	if self.settings.strColorEsper_Absorb ~= nil then
+		self.wndConfigColorsEsper:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorEsper_Absorb) end
+		
+	if self.settings.strColorMedic_HPHealthy ~= nil then
+		self.wndConfigColorsMedic:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorMedic_HPHealthy) end
+	if self.settings.strColorMedic_HPDebuff ~= nil then
+		self.wndConfigColorsMedic:FindChild("Label_ColorSettingsOuter:HPDebuff:ColorWindow"):SetBGColor(self.settings.strColorMedic_HPDebuff) end
+	if self.settings.strColorMedic_Shield ~= nil then
+		self.wndConfigColorsMedic:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorMedic_Shield) end
+	if self.settings.strColorMedic_Absorb ~= nil then
+		self.wndConfigColorsMedic:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorMedic_Absorb) end
+		
+	if self.settings.strColorSpellslinger_HPHealthy ~= nil then
+		self.wndConfigColorsSpellslinger:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorSpellslinger_HPHealthy) end
+	if self.settings.strColorSpellslinger_HPDebuff ~= nil then
+		self.wndConfigColorsSpellslinger:FindChild("Label_ColorSettingsOuter:HPDebuff:ColorWindow"):SetBGColor(self.settings.strColorSpellslinger_HPDebuff) end
+	if self.settings.strColorSpellslinger_Shield ~= nil then
+		self.wndConfigColorsSpellslinger:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorSpellslinger_Shield) end
+	if self.settings.strColorSpellslinger_Absorb ~= nil then
+		self.wndConfigColorsSpellslinger:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorSpellslinger_Absorb) end
+		
+	if self.settings.strColorStalker_HPHealthy ~= nil then
+		self.wndConfigColorsStalker:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorStalker_HPHealthy) end
+	if self.settings.strColorStalker_HPDebuff ~= nil then
+		self.wndConfigColorsStalker:FindChild("Label_ColorSettingsOuter:HPDebuff:ColorWindow"):SetBGColor(self.settings.strColorStalker_HPDebuff) end
+	if self.settings.strColorStalker_Shield ~= nil then
+		self.wndConfigColorsStalker:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorStalker_Shield) end
+	if self.settings.strColorStalker_Absorb ~= nil then
+		self.wndConfigColorsStalker:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorStalker_Absorb) end
+		
+	if self.settings.strColorWarrior_HPHealthy ~= nil then
+		self.wndConfigColorsWarrior:FindChild("Label_ColorSettingsOuter:HPHealthy:ColorWindow"):SetBGColor(self.settings.strColorWarrior_HPHealthy) end
+	if self.settings.strColorWarrior_HPDebuff ~= nil then
+		self.wndConfigColorsWarrior:FindChild("Label_ColorSettingsOuter:HPDebuff:ColorWindow"):SetBGColor(self.settings.strColorWarrior_HPDebuff) end
+	if self.settings.strColorWarrior_Shield ~= nil then
+		self.wndConfigColorsWarrior:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorWarrior_Shield) end
+	if self.settings.strColorWarrior_Absorb ~= nil then
+		self.wndConfigColorsWarrior:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorWarrior_Absorb) end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -2304,6 +2393,10 @@ end
 -- ConfigColorsGeneral Functions
 ---------------------------------------------------------------------------------------------------
 
+function BetterRaidFrames:Button_ClassSpecificBarColors( wndHandler, wndControl, eMouseButton )
+	self.settings.bClassSpecificBarColors = wndHandler:IsChecked()
+end
+
 function BetterRaidFrames:OnColorReset( wndHandler, wndControl, eMouseButton )
 	if wndHandler ~= wndControl then return end
 	local strCategory = wndControl:GetParent():GetParent():GetParent():GetName()
@@ -2328,5 +2421,4 @@ end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
 BetterRaidFramesInst:Init()
-
 
