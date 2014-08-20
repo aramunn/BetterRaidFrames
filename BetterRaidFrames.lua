@@ -19,6 +19,16 @@ local ktCategoryToSettingKeyPrefix =
 	ConfigColorsWarrior			= "strColorWarrior_",
 }
 
+local ktClassIdToClassName =
+{
+	[GameLib.CodeEnumClass.Esper] 			= "Esper",
+	[GameLib.CodeEnumClass.Medic] 			= "Medic",
+	[GameLib.CodeEnumClass.Stalker] 		= "Stalker",
+	[GameLib.CodeEnumClass.Warrior] 		= "Warrior",
+	[GameLib.CodeEnumClass.Engineer] 		= "Engineer",
+	[GameLib.CodeEnumClass.Spellslinger] 	= "Spellslinger",
+}
+
 -- TODO: This should be enums (string comparison already fails on esper)
 local ktIdToClassSprite =
 {
@@ -1050,7 +1060,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		-- Change the HP Bar Color if required for debuff tracking
 		local DebuffColorRequired = self:TrackDebuffsHelper(unitMember, tRaidMember)
 		-- Update Bar Colors
-		self:UpdateBarColors(tRaidMember, DebuffColorRequired)
+		self:UpdateBarColors(tRaidMember, tMemberData, DebuffColorRequired)
 		
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
@@ -2016,19 +2026,37 @@ function BetterRaidFrames:TrackDebuffsHelper(unitMember, tRaidMember)
 	return false
 end
 
-function BetterRaidFrames:UpdateBarColors(tRaidMember, DebuffColorRequired)
+function BetterRaidFrames:UpdateBarColors(tRaidMember, tMemberData, DebuffColorRequired)
 	local wndHP = tRaidMember.wndCurrHealthBar
 	local wndShield = tRaidMember.wndCurrShieldBar
 	local wndAbsorb = tRaidMember.wndCurrAbsorbBar
 	
-	if DebuffColorRequired then
-		wndHP:SetBarColor(self.settings.strColorGeneral_HPDebuff)
+	local HPHealthyColor
+	local HPDebuffColor
+	local ShieldBarColor
+	local AbsorbBarColor
+	
+	if self.settings.bClassSpecificBarColors then
+		local strClassKey = "strColor"..ktClassIdToClassName[tMemberData.eClassId]
+		HPHealthyColor = self.settings[strClassKey.."_HPHealthy"]
+		HPDebuffColor = self.settings[strClassKey.."_HPDebuff"]
+		ShieldBarColor = self.settings[strClassKey.."_Shield"]
+		AbsorbBarColor = self.settings[strClassKey.."_Absorb"]
 	else
-		wndHP:SetBarColor(self.settings.strColorGeneral_HPHealthy)
+		HPHealthyColor = self.settings.strColorGeneral_HPHealthy
+		HPDebuffColor = self.settings.strColorGeneral_HPDebuff
+		ShieldBarColor = self.settings.strColorGeneral_Shield
+		AbsorbBarColor = self.settings.strColorGeneral_Absorb
+	end
+
+	if DebuffColorRequired then
+		wndHP:SetBarColor(HPDebuffColor)
+	else
+		wndHP:SetBarColor(HPHealthyColor)
 	end
 	
-	wndShield:SetBarColor(self.settings.strColorGeneral_Shield)
-	wndAbsorb:SetBarColor(self.settings.strColorGeneral_Absorb)
+	wndShield:SetBarColor(ShieldBarColor)
+	wndAbsorb:SetBarColor(AbsorbBarColor)
 end
 
 function BetterRaidFrames:CharacterToIdx(strCharacterName)
