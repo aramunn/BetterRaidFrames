@@ -378,7 +378,6 @@ function BetterRaidFrames:OnDocumentReady()
 
 	self.bSwapToTwoColsOnce 		= false
 	self.bTimerRunning 				= false
-	self.nNumReadyCheckResponses 	= -1 -- -1 means no check, 0 and higher means there is a check
 	self.nPrevMemberCount			= 0
 
 	self:UpdateOffsets()
@@ -611,10 +610,6 @@ function BetterRaidFrames:BuildAllFrames()
 		tCategoriesToUse = ktRoleCategoriesToUse
 	end
 
-	if self.nNumReadyCheckResponses >= 0 then
-		self.nNumReadyCheckResponses = 0 -- Will get added up in UpdateSpecificMember
-	end
-
 	local nInvalidOrDeadMembers = 0
 	local unitTarget = self.unitTarget
 	local bFrameLocked = self.settings.bLockFrame or self.wndRaidLockFrameBtn:IsChecked()
@@ -727,30 +722,38 @@ function BetterRaidFrames:UpdateAllMembers()
 		end
 		
 		-- Ready Check
-		local bMemberReadyProcessed = tRaidMember.wndRaidMemberStatusIcon:GetData() == tMemberData.strCharacterName -- has this player already added his ready state?
-		if self.nNumReadyCheckResponses >= 0 and not bMemberReadyProcessed then
+		-- has this player already added his ready state? Need to check if idx exists in table in case someone joins during ready check first. 
+		-- also cannot rely on tMemberData.bHasSetReady because we need to check for offline + only do a single pass per member over this, not loop.
+		local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.nMemberIdx]
+		local bMemberReadyProcessed = bValidReadyCheckIdx and self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady
+		if self.bReadyCheckActive and bValidReadyCheckIdx and not bMemberReadyProcessed then
 			local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
 			if tMemberData.bHasSetReady and tMemberData.bReady then
-				self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 				wndReadyCheckIcon:SetText(Apollo.GetString("RaidFrame_Ready"))
 				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
-				tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = true
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false				
 			elseif tMemberData.bHasSetReady and not tMemberData.bReady then
-				self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 				wndReadyCheckIcon:SetText("")
 				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-				tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
 			elseif not tMemberData.bIsOnline then
-				self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 				wndReadyCheckIcon:SetText("")
 				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-				tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = true
+				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
 			else
 				wndReadyCheckIcon:SetText("")
 				wndReadyCheckIcon:SetSprite("")
 			end
 			wndReadyCheckIcon:Show(true)
-			--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 		end
 		if not self.settings.bDisableFrames then
 			-- Fix bar flickering
@@ -815,7 +818,7 @@ function BetterRaidFrames:UpdateOffsets()
 		self.nLeftOffsetStartValue = self.nLeftOffsetStartValue + 16 --wndRaidMember:FindChild("RaidMemberClassIcon"):GetWidth()
 	end
 
-	if self.nNumReadyCheckResponses >= 0 then
+	if self.bReadyCheckActive then
 		self.nLeftOffsetStartValue = self.nLeftOffsetStartValue + 16 --wndRaidMember:FindChild("RaidMemberReadyIcon"):GetWidth()
 	end
 end
@@ -1072,31 +1075,40 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		wndMarkIcon:Show(bShowMarkIcon and nMarkIdx ~= 0)
 	end
 	-- Ready Check
-	local bMemberReadyProcessed = tRaidMember.wndRaidMemberStatusIcon:GetData() == tMemberData.strCharacterName -- has this player already added his ready state?
-	if self.nNumReadyCheckResponses >= 0 and not bMemberReadyProcessed then
+	-- has this player already added his ready state? Need to check if idx exists in table in case someone joins during ready check first. 
+	-- also cannot rely on tMemberData.bHasSetReady because we need to check for offline + only do a single pass per member over this, not loop.
+	local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.nMemberIdx]
+	local bMemberReadyProcessed = bValidReadyCheckIdx and self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady
+	if self.bReadyCheckActive and bValidReadyCheckIdx and not bMemberReadyProcessed then
 		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
 		if tMemberData.bHasSetReady and tMemberData.bReady then
-			self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 			wndReadyCheckIcon:SetText(Apollo.GetString("RaidFrame_Ready"))
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
-			tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false				
 		elseif tMemberData.bHasSetReady and not tMemberData.bReady then
-			self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 			wndReadyCheckIcon:SetText("")
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-			tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
 		elseif not tMemberData.bIsOnline then
-			self.nNumReadyCheckResponses = self.nNumReadyCheckResponses + 1
 			wndReadyCheckIcon:SetText("")
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-			tRaidMember.wndRaidMemberStatusIcon:SetData(tMemberData.strCharacterName)
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
 		else
 			wndReadyCheckIcon:SetText("")
 			wndReadyCheckIcon:SetSprite("")
 		end
 		wndReadyCheckIcon:Show(true)
-		--wndRaidMember:BringChildToTop(wndReadyCheckIcon)
 	end
+
 	-- Change data back to nil when the ready check is no longer active.
 	if bMemberReadyProcessed and not self.bReadyCheckActive then
 		tRaidMember.wndRaidMemberStatusIcon:SetData(nil)
@@ -1297,7 +1309,8 @@ function BetterRaidFrames:OnGroup_ReadyCheck(nMemberIdx, strMessage)
 	self.wndReadyCheckPopup:FindChild("ReadyCheckCloseBtn"):SetData(wndReadyCheckPopup)
 	self.wndReadyCheckPopup:FindChild("ReadyCheckMessage"):SetText(String_GetWeaselString(Apollo.GetString("RaidFrame_ReadyCheckStarted"), strName) .. "\n" .. strMessage)
 
-	self.nNumReadyCheckResponses = 0
+	-- Table that holds ready check results
+	self.tReadyCheckResults = self:GetReadyCheckMemberData()
 
 	self.strReadyCheckInitiator = strName
 	self.strReadyCheckMessage = strMessage
@@ -1318,44 +1331,79 @@ function BetterRaidFrames:OnReadyCheckResponse(wndHandler, wndControl)
 end
 
 function BetterRaidFrames:OnReadyCheckTimeout()
-	self.nNumReadyCheckResponses = -1
+	self.bReadyCheckActive = false
 
 	if self.wndReadyCheckPopup and self.wndReadyCheckPopup:IsValid() then
 		self.wndReadyCheckPopup:Destroy()
 	end
 
-	local strMembersNotReady = ""
-	for key, wndCategory in pairs(self.wndRaidCategoryContainer:GetChildren()) do
-		for key2, wndMember in pairs(wndCategory:FindChild("RaidCategoryItems"):GetChildren()) do
-			if wndMember:FindChild("RaidMemberReadyIcon") and wndMember:FindChild("RaidMemberReadyIcon"):IsValid() then
-				if wndMember:FindChild("RaidMemberReadyIcon"):GetText() ~= Apollo.GetString("RaidFrame_Ready") then
-					if strMembersNotReady == "" then
-						strMembersNotReady = wndMember:FindChild("RaidMemberStatusIcon"):GetData()
-					else
-						strMembersNotReady = String_GetWeaselString(Apollo.GetString("RaidFrame_NotReadyList"), strMembersNotReady, wndMember:FindChild("RaidMemberStatusIcon"):GetData())
-					end
-				end
-				--wndMember:FindChild("RaidMemberReadyIcon"):Destroy()
-				wndMember:FindChild("RaidMemberReadyIcon"):Show(false)
-			elseif strMembersNotReady == "" then
-				strMembersNotReady = wndMember:FindChild("RaidMemberStatusIcon"):GetData()
-			else
-				strMembersNotReady = String_GetWeaselString(Apollo.GetString("RaidFrame_NotReadyList"), strMembersNotReady, wndMember:FindChild("RaidMemberStatusIcon"):GetData())
-			end
+	local tMembersNotReady = {}
+	local tMembersAway = {}
+	local tMembersOffline = {}
+	-- Shitty lua has no break loop/continue next item support
+	for idx, member in pairs(self.tReadyCheckResults) do
+		-- offline
+		if member.bIsOffline then
+			tMembersOffline[#tMembersOffline + 1] = member.strCharacterName
+		end
+		-- away
+		if not member.bIsOffline and not member.bHasSetReady and member.bIsAway then
+			tMembersAway[#tMembersAway + 1] = member.strCharacterName
+		end
+		-- not ready
+		if not member.bIsOffline and member.bHasSetReady and not member.bIsReady then
+			tMembersNotReady[#tMembersNotReady + 1] = member.strCharacterName
 		end
 	end
-
-	self:OnRaidFrameBaseTimer()
-
-	if strMembersNotReady == "" then
-		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, Apollo.GetString("RaidFrame_ReadyCheckSuccess"), "")
-	else
-		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, String_GetWeaselString(Apollo.GetString("RaidFrame_ReadyCheckFail"), strMembersNotReady), "")
-	end
-
-	self.bReadyCheckActive = false
 	
+	local strMembersNotReady = table.concat(tMembersNotReady, ", ")
+	local strMembersAway = table.concat(tMembersAway, ", ")
+	local strMembersOffline = table.concat(tMembersOffline, ", ")
+	
+	-- Hide the ready check icons of all members
+	for key, wndCategory in pairs(self.wndRaidCategoryContainer:GetChildren()) do
+		for key2, wndMember in pairs(wndCategory:FindChild("RaidCategoryItems"):GetChildren()) do
+			wndMember:FindChild("RaidMemberReadyIcon"):Show(false)
+		end
+	end
+	
+	self.tReadyCheckResults = nil
+	self:OnRaidFrameBaseTimer()
 	self:ResizeAllFrames()
+	
+	if strMembersNotReady ~= "" then
+		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, "The following members are Not Ready: "..strMembersNotReady, "")
+	end
+	
+	if strMembersAway ~= "" then
+		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, "The following members are Away: "..strMembersAway, "")
+	end
+	
+	if strMembersOfline ~= "" then
+		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, "The following members are Offline: "..strMembersOffline, "")
+	end
+	
+	if strMembersNotReady == "" and strMembersAway == "" and strMembersOffline == "" then
+		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, Apollo.GetString("RaidFrame_ReadyCheckSuccess"), "")
+	end
+end
+
+function BetterRaidFrames:GetReadyCheckMemberData()
+	local table = {}
+	local nGroupMemberCount = GroupLib.GetMemberCount()
+	for nMemberIdx=0, nGroupMemberCount do
+		local tMemberData = GroupLib.GetGroupMember(nMemberIdx)
+		if tMemberData ~= nil then
+			table[nMemberIdx] = {
+				bHasSetReady = false,
+				bIsAway = true,
+				bIsOffline = not tMemberData.bIsOnline,
+				bIsReady = false,
+				strCharacterName = tMemberData.strCharacterName,
+			}
+		end
+	end
+	return table
 end
 
 -----------------------------------------------------------------------------------------------
