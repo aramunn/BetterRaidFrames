@@ -833,12 +833,6 @@ function BetterRaidFrames:UpdateAllMembers()
 		end
 		
 		if not self.settings.bDisableFrames then
-			-- Fix bar flickering
-			self:UpdateOffsets()
-			self:ResizeMemberFrame(tRaidMember.wnd)
-		end
-		
-		if not self.settings.bDisableFrames then
 			-- HP and Shields
 			if tMemberData then
 				local bTargetThisMember = unitTarget and unitTarget == unitMember
@@ -1069,10 +1063,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	local bShowMarkIcon
 	local wndMarkIcon
 
-	-- Fix for flickering when icons in front of bars update
-	self:UpdateOffsets()
-	self:ResizeMemberFrame(wndRaidMember)
-
 	wndMemberBtn = tRaidMember.wndRaidMemberBtn
 	unitTarget = self.unitTarget
 
@@ -1158,25 +1148,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		self:ResizeMemberFrame(wndRaidMember) -- Fix for flickering when icons in front of bars update
 		self:DoHPAndShieldResizing(tRaidMember, tMemberData)
 
-		-- Mana Bar
-		local bShowManaBar = self.settings.bShowFocus and tMemberData.bHealer
-		local wndManaBar = wndMemberBtn:FindChild("RaidMemberManaBar")
-		if bShowManaBar and tMemberData.nMana and tMemberData.nMana > 0 then
-			local nManaMax
-			if tMemberData.nManaMax	<= 0 then
-				nManaMax = 1000
-			else
-				nManaMax = tMemberData.nManaMax
-			end
-			wndManaBar:SetMax(nManaMax)
-			wndManaBar:SetProgress(tMemberData.nMana)	
-		end
-		wndManaBar:Show(bShowManaBar and tMemberData.bIsOnline and not bDead and not bOutOfRange)
-		
 		-- Scaling
 		self:ResizeBars(tRaidMember, bDead)
 	end
-	self:ResizeMemberFrame(wndRaidMember)
 end
 
 function BetterRaidFrames:OnTargetUnitChanged(unitOwner)
@@ -2126,8 +2100,10 @@ function BetterRaidFrames:OnRaidCustomizeRoleIconsCheck( wndHandler, wndControl,
 end
 
 function BetterRaidFrames:OnRaidCustomizeClassIconsCheck(wndHandler, wndControl, eMouseButton)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers, knDirtyResize)
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 	self.settings.bShowIcon_Class = wndHandler:IsChecked()
+	-- Fix for flickering when icons in front of bars update
+	self:UpdateOffsets()
 end
 
 function BetterRaidFrames:OnRaidCustomizeMarkIconsCheck( wndHandler, wndControl, eMouseButton )
