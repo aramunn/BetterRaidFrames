@@ -179,6 +179,7 @@ local DefaultSettings = {
 	bCheckRange = false,
 	fMaxRange = 50,
 	bDisableFrames = false,
+	bConsistentIconOffset = false,
 	
 	-- Custom settings via /brf colors
 	bClassSpecificBarColors = false,
@@ -500,6 +501,8 @@ function BetterRaidFrames:RefreshSettings()
 	end
 	if self.settings.bDisableFrames ~= nil then
 		self.wndConfig:FindChild("Button_DisableFrames"):SetCheck(self.settings.bDisableFrames) end
+	if self.settings.bConsistentIconOffset ~= nil then
+		self.wndConfig:FindChild("Button_ConsistentIconOffset"):SetCheck(self.settings.bConsistentIconOffset) end
 
 	-- Settings related to /brf colors settings frame
 	if self.settings.bClassSpecificBarColors ~= nil then
@@ -1140,7 +1143,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			wndLeaderIcon:SetSprite(ktIdToLeaderSprite[nLeaderIdx])
 			wndLeaderIcon:SetTooltip(Apollo.GetString(ktIdToLeaderTooltip[nLeaderIdx]))
 		end
-		wndLeaderIcon:Show(bShowLeaderIcon and nLeaderIdx ~= 0)
+		wndLeaderIcon:Show(bShowLeaderIcon and (nLeaderIdx ~= 0 or self.settings.bConsistentIconOffset))
 	
 		local nRoleIdx = -1
 		bShowRoleIcon = self.settings.bShowIcon_Role
@@ -1162,7 +1165,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			--wndRoleIcon:SetSprite(ktIdToRoleSprite[nRoleIdx])
 			wndRoleIcon:SetTooltip(Apollo.GetString(ktIdToRoleTooltip[nRoleIdx]))
 		end
-		wndRoleIcon:Show(bShowRoleIcon and nRoleIdx ~= -1)
+		wndRoleIcon:Show(bShowRoleIcon and (nRoleIdx ~= -1 or self.settings.bConsistentIconOffset))
 	
 		local nMarkIdx = 0
 		bShowMarkIcon = self.settings.bShowIcon_Mark
@@ -1171,7 +1174,7 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 			nMarkIdx = tMemberData.nMarkerId or 0
 			wndMarkIcon:SetSprite(kstrRaidMarkerToSprite[nMarkIdx])
 		end
-		wndMarkIcon:Show(bShowMarkIcon and nMarkIdx ~= 0)
+		wndMarkIcon:Show(bShowMarkIcon and (nMarkIdx ~= 0 or self.settings.bConsistentIconOffset))
 	end
 	-- Ready Check
 	-- has this player already added his ready state? Need to check if idx exists in table in case someone joins during ready check first. 
@@ -2328,6 +2331,11 @@ function BetterRaidFrames:Button_DisableRaidFrames( wndHandler, wndControl, eMou
 		Apollo.CreateTimer("TrackSavedCharactersTimer", 1, false)
 		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 	end
+end
+
+function BetterRaidFrames:Button_ConsistentIconOffset( wndHandler, wndControl, eMouseButton )
+	self.settings.bConsistentIconOffset = wndHandler:IsChecked()
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 end
 
 function BetterRaidFrames:CPrint(str)
