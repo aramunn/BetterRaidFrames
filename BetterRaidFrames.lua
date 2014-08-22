@@ -352,10 +352,10 @@ function BetterRaidFrames:OnDocumentReady()
 	Apollo.RegisterEventHandler("MasterLootUpdate",							"OnMasterLootUpdate", 	self)
 
 	Apollo.RegisterTimerHandler("ReadyCheckTimeout", 						"OnReadyCheckTimeout", self)
-	Apollo.RegisterEventHandler("VarChange_FrameCount", 					"OnRaidFrameBaseTimer", self)
-	--[[Apollo.RegisterTimerHandler("RaidUpdateTimer",							"OnRaidFrameBaseTimer", self)
+	--Apollo.RegisterEventHandler("VarChange_FrameCount", 					"OnRaidFrameBaseTimer", self)
+	Apollo.RegisterTimerHandler("RaidUpdateTimer",							"OnRaidFrameBaseTimer", self)
 	Apollo.CreateTimer("RaidUpdateTimer", 0.2, true)
-	Apollo.StopTimer("RaidUpdateTimer")--]]
+	Apollo.StopTimer("RaidUpdateTimer")
 	
 	Apollo.RegisterEventHandler("ChangeWorld", 								"OnChangeWorld", self)
 	Apollo.RegisterTimerHandler("TrackSavedCharactersTimer",				"TrackSavedCharacters", self)
@@ -440,9 +440,9 @@ function BetterRaidFrames:OnDocumentReady()
 		self:OnCharacterCreated()
 	end
 	
-	--if GroupLib.InRaid() then
-	--	Apollo.StartTimer("RaidUpdateTimer")
-	--end
+	if GroupLib.InRaid() then
+		Apollo.StartTimer("RaidUpdateTimer")
+	end
 	
 	-- Refresh settings visually
 	self:RefreshSettings()
@@ -593,7 +593,7 @@ function BetterRaidFrames:OnRaidFrameBaseTimer()
 	if not GroupLib.InRaid() then
 		if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsShown() then
 			self.wndMain:Show(false)
-			--Apollo.StopTimer("RaidUpdateTimer")
+			Apollo.StopTimer("RaidUpdateTimer")
 		end
 		return
 	end
@@ -645,6 +645,7 @@ end
 
 function BetterRaidFrames:OnGroup_Join()
 	if not GroupLib.InRaid() then return end
+	Apollo.StartTimer("RaidUpdateTimer")
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 end
 
