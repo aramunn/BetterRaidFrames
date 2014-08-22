@@ -827,8 +827,10 @@ function BetterRaidFrames:UpdateAllMembers()
 		end
 		
 		-- Ready Check
-		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
-		wndReadyCheckIcon:Show(self.bReadyCheckActive)
+		if not self.settings.bDisableFrames then
+			local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
+			wndReadyCheckIcon:Show(self.bReadyCheckActive)
+		end
 		
 		if not self.settings.bDisableFrames then
 			-- Fix bar flickering
