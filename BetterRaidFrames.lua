@@ -823,7 +823,7 @@ function BetterRaidFrames:UpdateAllMembers()
 		
 		-- Update opacity if out of range
 		if not self.settings.bDisableFrames then
-		 self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
+			self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
 		end
 		
 		-- Ready Check
