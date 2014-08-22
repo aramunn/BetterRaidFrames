@@ -353,6 +353,10 @@ function BetterRaidFrames:OnDocumentReady()
 
 	Apollo.RegisterTimerHandler("ReadyCheckTimeout", 						"OnReadyCheckTimeout", self)
 	Apollo.RegisterEventHandler("VarChange_FrameCount", 					"OnRaidFrameBaseTimer", self)
+	--[[Apollo.RegisterTimerHandler("RaidUpdateTimer",							"OnRaidFrameBaseTimer", self)
+	Apollo.CreateTimer("RaidUpdateTimer", 0.2, true)
+	Apollo.StopTimer("RaidUpdateTimer")--]]
+	
 	Apollo.RegisterEventHandler("ChangeWorld", 								"OnChangeWorld", self)
 	Apollo.RegisterTimerHandler("TrackSavedCharactersTimer",				"TrackSavedCharacters", self)
 	
@@ -435,6 +439,10 @@ function BetterRaidFrames:OnDocumentReady()
 	if unitPlayer then
 		self:OnCharacterCreated()
 	end
+	
+	--if GroupLib.InRaid() then
+	--	Apollo.StartTimer("RaidUpdateTimer")
+	--end
 	
 	-- Refresh settings visually
 	self:RefreshSettings()
@@ -585,6 +593,7 @@ function BetterRaidFrames:OnRaidFrameBaseTimer()
 	if not GroupLib.InRaid() then
 		if self.wndMain and self.wndMain:IsValid() and self.wndMain:IsShown() then
 			self.wndMain:Show(false)
+			--Apollo.StopTimer("RaidUpdateTimer")
 		end
 		return
 	end
@@ -826,12 +835,6 @@ function BetterRaidFrames:UpdateAllMembers()
 			self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
 		end
 		
-		-- Ready Check
-		if not self.settings.bDisableFrames then
-			local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
-			wndReadyCheckIcon:Show(self.bReadyCheckActive)
-		end
-		
 		if not self.settings.bDisableFrames then
 			-- HP and Shields
 			if tMemberData then
@@ -933,7 +936,7 @@ function BetterRaidFrames:ResizeMemberFrame(wndRaidMember)
 	if tRaidMember.wndRaidMemberMarkIcon:IsShown() then
 		nLeftOffset = nLeftOffset + tRaidMember.wndRaidMemberMarkIcon:GetWidth()
 	end
-	if tRaidMember.wndRaidMemberReadyIcon:IsShown() then
+	if self.settings.bReadyCheckActive then
 		-- GetWidth() is too much and leaves empty space.
 		nLeftOffset = nLeftOffset + 3 --tRaidMember.wndRaidMemberReadyIcon:GetWidth()
 	end
@@ -1062,6 +1065,11 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	local wndRoleIcon
 	local bShowMarkIcon
 	local wndMarkIcon
+	
+	-- Fix for flickering when icons in front of bars update
+	-- Also for bar offsetting
+	self:UpdateOffsets()
+	self:ResizeMemberFrame(wndRaidMember)
 
 	wndMemberBtn = tRaidMember.wndRaidMemberBtn
 	unitTarget = self.unitTarget
@@ -1137,6 +1145,10 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		wndMarkIcon:SetSprite(kstrRaidMarkerToSprite[nMarkIdx])
 	end
 	wndMarkIcon:Show(bShowMarkIcon and (nMarkIdx ~= 0 or self.settings.bConsistentIconOffset))
+	
+	-- Ready check
+	local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
+	wndReadyCheckIcon:Show(self.bReadyCheckActive)
 
 	-- HP and Shields
 	local unitPlayer = GameLib.GetPlayerUnit()
@@ -1319,6 +1331,7 @@ function BetterRaidFrames:OnGroup_ReadyCheck(nMemberIdx, strMessage)
 	self.strReadyCheckMessage = strMessage
 	self.fReadyCheckStartTime = os.clock()
 	self.bReadyCheckActive = true
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 
 	Apollo.CreateTimer("ReadyCheckTimeout", knReadyCheckTimeout, false)
 end
@@ -1335,6 +1348,7 @@ end
 
 function BetterRaidFrames:OnReadyCheckTimeout()
 	self.bReadyCheckActive = false
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 
 	if self.wndReadyCheckPopup and self.wndReadyCheckPopup:IsValid() then
 		self.wndReadyCheckPopup:Destroy()
