@@ -671,6 +671,9 @@ function BetterRaidFrames:OnGroup_MemberFlagsChanged(nMemberIdx, bFromPromotion,
 	if not tChangedFlags.bHasSetReady then
 		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 	end
+	if tChangedFlags.bHasSetReady then
+		self:OnReadyCheckMemberResponse(nMemberIdx)
+	end
 end
 
 function BetterRaidFrames:OnGroup_LootRulesChanged()
@@ -824,48 +827,13 @@ function BetterRaidFrames:UpdateAllMembers()
 		end
 		
 		-- Ready Check
-		-- has this player already added his ready state? Need to check if idx exists in table in case someone joins during ready check first. 
-		-- also cannot rely on tMemberData.bHasSetReady because we need to check for offline + only do a single pass per member over this, not loop.
-		local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.nMemberIdx]
-		local bMemberReadyProcessed = bValidReadyCheckIdx and self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady
-		if self.bReadyCheckActive and bValidReadyCheckIdx and not bMemberReadyProcessed then
-			local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
-			if tMemberData.bHasSetReady and tMemberData.bReady then
-				wndReadyCheckIcon:SetText(Apollo.GetString("RaidFrame_Ready"))
-				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = true
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false				
-			elseif tMemberData.bHasSetReady and not tMemberData.bReady then
-				wndReadyCheckIcon:SetText("")
-				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
-			elseif not tMemberData.bIsOnline then
-				wndReadyCheckIcon:SetText("")
-				wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = true
-				self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
-			else
-				wndReadyCheckIcon:SetText("")
-				wndReadyCheckIcon:SetSprite("")
-			end
-			wndReadyCheckIcon:Show(true)
-		end
+		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
+		wndReadyCheckIcon:Show(self.bReadyCheckActive)
+		
 		if not self.settings.bDisableFrames then
 			-- Fix bar flickering
 			self:UpdateOffsets()
 			self:ResizeMemberFrame(tRaidMember.wnd)
-		end
-		
-		-- Change data back to nil when the ready check is no longer active.
-		if bMemberReadyProcessed and not self.bReadyCheckActive then
-			tRaidMember.wndRaidMemberStatusIcon:SetData(nil)
 		end
 		
 		if not self.settings.bDisableFrames then
@@ -1074,6 +1042,9 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
+	if self.settings.bDisableFrames then
+		return
+	end
 	if not tRaidMember or not tRaidMember.wnd or not tMemberData then
 		return
 	end
@@ -1095,131 +1066,85 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	local wndRoleIcon
 	local bShowMarkIcon
 	local wndMarkIcon
-	
-	if not self.settings.bDisableFrames then
-		-- Fix for flickering when icons in front of bars update
-		self:UpdateOffsets()
-		self:ResizeMemberFrame(wndRaidMember)
-	
-		wndMemberBtn = tRaidMember.wndRaidMemberBtn
-		unitTarget = self.unitTarget
-	
-		tRaidMember.wndHealthBar:Show(true)
-		tRaidMember.wndMaxAbsorbBar:Show(tMemberData.nHealth > 0 and tMemberData.nHealthMax > 0)
-		tRaidMember.wndMaxShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
-		tRaidMember.wndCurrShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
-		tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
-	
-		bOutOfRange = tMemberData.nHealthMax == 0
-		bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
-		unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
-	
-		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
-		
-		-- Update opacity if out of range
-		self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
-		
-		bShowClassIcon = self.settings.bShowIcon_Class
-		wndClassIcon = tRaidMember.wndRaidMemberClassIcon
-		if bShowClassIcon then
-			wndClassIcon:SetSprite(ktIdToClassSprite[tMemberData.eClassId])
-			wndClassIcon:SetTooltip(Apollo.GetString(ktIdToClassTooltip[tMemberData.eClassId]))
-		end
-		wndClassIcon:Show(bShowClassIcon)
-	
-		local nLeaderIdx = 0
-		bShowLeaderIcon = self.settings.bShowIcon_Leader
-		wndLeaderIcon = tRaidMember.wndRaidMemberIsLeader
-		if bShowLeaderIcon then
-			if tMemberData.bIsLeader then
-				nLeaderIdx = 1
-			elseif tMemberData.bMainTank then
-				nLeaderIdx = 2
-			elseif tMemberData.bMainAssist then
-				nLeaderIdx = 3
-			elseif tMemberData.bRaidAssistant then
-				nLeaderIdx = 4
-			end
-			wndLeaderIcon:SetSprite(ktIdToLeaderSprite[nLeaderIdx])
-			wndLeaderIcon:SetTooltip(Apollo.GetString(ktIdToLeaderTooltip[nLeaderIdx]))
-		end
-		wndLeaderIcon:Show(bShowLeaderIcon and (nLeaderIdx ~= 0 or self.settings.bConsistentIconOffset))
-	
-		local nRoleIdx = -1
-		bShowRoleIcon = self.settings.bShowIcon_Role
-		wndRoleIcon = tRaidMember.wndRaidMemberRoleIcon
-	
-		if bShowRoleIcon then
-			if tMemberData.bDPS then
-				nRoleIdx = MatchingGame.Roles.DPS
-			elseif tMemberData.bHealer then
-				nRoleIdx = MatchingGame.Roles.Healer
-			elseif tMemberData.bTank then
-				nRoleIdx = MatchingGame.Roles.Tank
-			end
-			local tPixieInfo = wndRoleIcon:GetPixieInfo(1)
-			if tPixieInfo then
-				tPixieInfo.strSprite = ktIdToRoleSprite[nRoleIdx]
-				wndRoleIcon:UpdatePixie(1, tPixieInfo)
-			end
-			--wndRoleIcon:SetSprite(ktIdToRoleSprite[nRoleIdx])
-			wndRoleIcon:SetTooltip(Apollo.GetString(ktIdToRoleTooltip[nRoleIdx]))
-		end
-		wndRoleIcon:Show(bShowRoleIcon and (nRoleIdx ~= -1 or self.settings.bConsistentIconOffset))
-	
-		local nMarkIdx = 0
-		bShowMarkIcon = self.settings.bShowIcon_Mark
-		wndMarkIcon = tRaidMember.wndRaidMemberMarkIcon
-		if bShowMarkIcon then
-			nMarkIdx = tMemberData.nMarkerId or 0
-			wndMarkIcon:SetSprite(kstrRaidMarkerToSprite[nMarkIdx])
-		end
-		wndMarkIcon:Show(bShowMarkIcon and (nMarkIdx ~= 0 or self.settings.bConsistentIconOffset))
-	end
-	-- Ready Check
-	-- has this player already added his ready state? Need to check if idx exists in table in case someone joins during ready check first. 
-	-- also cannot rely on tMemberData.bHasSetReady because we need to check for offline + only do a single pass per member over this, not loop.
-	local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.nMemberIdx]
-	local bMemberReadyProcessed = bValidReadyCheckIdx and self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady
-	if self.bReadyCheckActive and bValidReadyCheckIdx and not bMemberReadyProcessed then
-		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
-		if tMemberData.bHasSetReady and tMemberData.bReady then
-			wndReadyCheckIcon:SetText(Apollo.GetString("RaidFrame_Ready"))
-			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false				
-		elseif tMemberData.bHasSetReady and not tMemberData.bReady then
-			wndReadyCheckIcon:SetText("")
-			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
-		elseif not tMemberData.bIsOnline then
-			wndReadyCheckIcon:SetText("")
-			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
-		else
-			wndReadyCheckIcon:SetText("")
-			wndReadyCheckIcon:SetSprite("")
-		end
-		wndReadyCheckIcon:Show(true)
-	end
 
-	-- Change data back to nil when the ready check is no longer active.
-	if bMemberReadyProcessed and not self.bReadyCheckActive then
-		tRaidMember.wndRaidMemberStatusIcon:SetData(nil)
-	end
+	-- Fix for flickering when icons in front of bars update
+	self:UpdateOffsets()
+	self:ResizeMemberFrame(wndRaidMember)
+
+	wndMemberBtn = tRaidMember.wndRaidMemberBtn
+	unitTarget = self.unitTarget
+
+	tRaidMember.wndHealthBar:Show(true)
+	tRaidMember.wndMaxAbsorbBar:Show(tMemberData.nHealth > 0 and tMemberData.nHealthMax > 0)
+	tRaidMember.wndMaxShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
+	tRaidMember.wndCurrShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
+	tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
+
+	bOutOfRange = tMemberData.nHealthMax == 0
+	bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+	unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
+
+	self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 	
-	-- We can return at this point if we are hiding the frames and the ready check is processed
-	if self.settings.bDisableFrames then
-		return
+	-- Update opacity if out of range
+	self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
+	
+	bShowClassIcon = self.settings.bShowIcon_Class
+	wndClassIcon = tRaidMember.wndRaidMemberClassIcon
+	if bShowClassIcon then
+		wndClassIcon:SetSprite(ktIdToClassSprite[tMemberData.eClassId])
+		wndClassIcon:SetTooltip(Apollo.GetString(ktIdToClassTooltip[tMemberData.eClassId]))
 	end
+	wndClassIcon:Show(bShowClassIcon)
+
+	local nLeaderIdx = 0
+	bShowLeaderIcon = self.settings.bShowIcon_Leader
+	wndLeaderIcon = tRaidMember.wndRaidMemberIsLeader
+	if bShowLeaderIcon then
+		if tMemberData.bIsLeader then
+			nLeaderIdx = 1
+		elseif tMemberData.bMainTank then
+			nLeaderIdx = 2
+		elseif tMemberData.bMainAssist then
+			nLeaderIdx = 3
+		elseif tMemberData.bRaidAssistant then
+			nLeaderIdx = 4
+		end
+		wndLeaderIcon:SetSprite(ktIdToLeaderSprite[nLeaderIdx])
+		wndLeaderIcon:SetTooltip(Apollo.GetString(ktIdToLeaderTooltip[nLeaderIdx]))
+	end
+	wndLeaderIcon:Show(bShowLeaderIcon and (nLeaderIdx ~= 0 or self.settings.bConsistentIconOffset))
+
+	local nRoleIdx = -1
+	bShowRoleIcon = self.settings.bShowIcon_Role
+	wndRoleIcon = tRaidMember.wndRaidMemberRoleIcon
+
+	if bShowRoleIcon then
+		if tMemberData.bDPS then
+			nRoleIdx = MatchingGame.Roles.DPS
+		elseif tMemberData.bHealer then
+			nRoleIdx = MatchingGame.Roles.Healer
+		elseif tMemberData.bTank then
+			nRoleIdx = MatchingGame.Roles.Tank
+		end
+		local tPixieInfo = wndRoleIcon:GetPixieInfo(1)
+		if tPixieInfo then
+			tPixieInfo.strSprite = ktIdToRoleSprite[nRoleIdx]
+			wndRoleIcon:UpdatePixie(1, tPixieInfo)
+		end
+		--wndRoleIcon:SetSprite(ktIdToRoleSprite[nRoleIdx])
+		wndRoleIcon:SetTooltip(Apollo.GetString(ktIdToRoleTooltip[nRoleIdx]))
+	end
+	wndRoleIcon:Show(bShowRoleIcon and (nRoleIdx ~= -1 or self.settings.bConsistentIconOffset))
+
+	local nMarkIdx = 0
+	bShowMarkIcon = self.settings.bShowIcon_Mark
+	wndMarkIcon = tRaidMember.wndRaidMemberMarkIcon
+	if bShowMarkIcon then
+		nMarkIdx = tMemberData.nMarkerId or 0
+		wndMarkIcon:SetSprite(kstrRaidMarkerToSprite[nMarkIdx])
+	end
+	wndMarkIcon:Show(bShowMarkIcon and (nMarkIdx ~= 0 or self.settings.bConsistentIconOffset))
 
 	-- HP and Shields
 	local unitPlayer = GameLib.GetPlayerUnit()
@@ -1470,6 +1395,7 @@ function BetterRaidFrames:OnReadyCheckTimeout()
 	end
 	
 	self.tReadyCheckResults = nil
+	self:ReadyCheckResetIconSprites()
 	self:OnRaidFrameBaseTimer()
 	self:ResizeAllFrames()
 	
@@ -1488,6 +1414,39 @@ function BetterRaidFrames:OnReadyCheckTimeout()
 	if strMembersNotReady == "" and strMembersAway == "" and strMembersOffline == "" then
 		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, Apollo.GetString("RaidFrame_ReadyCheckSuccess"), "")
 	end
+end
+
+function BetterRaidFrames:OnReadyCheckMemberResponse(idx)
+	local tMemberData = GroupLib.GetGroupMember(idx)
+	local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.nMemberIdx]
+	if self.bReadyCheckActive and bValidReadyCheckIdx then
+		local tRaidMember = self.arMemberIndexToWindow[idx]
+		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
+		if tMemberData.bHasSetReady and tMemberData.bReady then
+			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false				
+		elseif tMemberData.bHasSetReady and not tMemberData.bReady then
+			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
+			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
+		end
+	end
+end
+
+function BetterRaidFrames:ReadyCheckResetIconSprites()
+	nGroupMemberCount = GroupLib.GetMemberCount()
+	for nMemberIdx=0, nGroupMemberCount do
+		local tRaidMember = self.arMemberIndexToWindow[nMemberIdx]
+		if tRaidMember then
+			local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
+			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
+		end
+	end		
 end
 
 function BetterRaidFrames:GetReadyCheckMemberData()
