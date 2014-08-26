@@ -1352,17 +1352,27 @@ function BetterRaidFrames:OnReadyCheckTimeout()
 	local tMembersAway = {}
 	local tMembersOffline = {}
 	-- Shitty lua has no break loop/continue next item support
-	for idx, member in pairs(self.tReadyCheckResults) do
+	for t, member in pairs(self.tReadyCheckResults) do
+		local idx = self:CharacterToIdx(member.strCharacterName)
+		local memberData
+		local bIsOffline
+		if idx then
+			memberData = GroupLib.GetGroupMember(idx)
+			if memberData then
+				bIsOffline = not memberData.bIsOnline
+			end
+		end
+			
 		-- offline
-		if member.bIsOffline then
+		if memberData and bIsOffline then
 			tMembersOffline[#tMembersOffline + 1] = member.strCharacterName
 		end
 		-- away
-		if not member.bIsOffline and not member.bHasSetReady and member.bIsAway then
+		if memberData and not bIsOffline and not member.bHasSetReady then
 			tMembersAway[#tMembersAway + 1] = member.strCharacterName
 		end
 		-- not ready
-		if not member.bIsOffline and member.bHasSetReady and not member.bIsReady then
+		if memberData and not bIsOffline and member.bHasSetReady and not member.bIsReady then
 			tMembersNotReady[#tMembersNotReady + 1] = member.strCharacterName
 		end
 	end
@@ -1402,22 +1412,18 @@ end
 
 function BetterRaidFrames:OnReadyCheckMemberResponse(idx)
 	local tMemberData = GroupLib.GetGroupMember(idx)
-	local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.nMemberIdx]
+	local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.strCharacterName]
 	if self.bReadyCheckActive and bValidReadyCheckIdx then
 		local tRaidMember = self.arMemberIndexToWindow[idx]
 		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
 		if tMemberData.bHasSetReady and tMemberData.bReady then
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false				
+			self.tReadyCheckResults[tMemberData.strCharacterName].bHasSetReady = true
+			self.tReadyCheckResults[tMemberData.strCharacterName].bIsReady = true
 		elseif tMemberData.bHasSetReady and not tMemberData.bReady then
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bHasSetReady = true
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsReady = false
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsOffline = false
-			self.tReadyCheckResults[tMemberData.nMemberIdx].bIsAway = false
+			self.tReadyCheckResults[tMemberData.strCharacterName].bHasSetReady = true
+			self.tReadyCheckResults[tMemberData.strCharacterName].bIsReady = false
 		end
 	end
 end
@@ -1439,10 +1445,8 @@ function BetterRaidFrames:GetReadyCheckMemberData()
 	for nMemberIdx=0, nGroupMemberCount do
 		local tMemberData = GroupLib.GetGroupMember(nMemberIdx)
 		if tMemberData ~= nil then
-			table[nMemberIdx] = {
+			table[tMemberData.strCharacterName] = {
 				bHasSetReady = false,
-				bIsAway = true,
-				bIsOffline = not tMemberData.bIsOnline,
 				bIsReady = false,
 				strCharacterName = tMemberData.strCharacterName,
 			}
