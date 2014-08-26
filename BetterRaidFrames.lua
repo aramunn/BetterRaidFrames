@@ -1142,6 +1142,9 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	
 	-- Ready check
 	local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
+	if self.bReadyCheckActive then
+		wndReadyCheckIcon:SetSprite(self:MemberToReadyCheckSprite(tMemberData))
+	end
 	wndReadyCheckIcon:Show(self.bReadyCheckActive)
 
 	-- HP and Shields
@@ -1437,6 +1440,27 @@ function BetterRaidFrames:ReadyCheckResetIconSprites()
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
 		end
 	end		
+end
+
+function BetterRaidFrames:MemberToReadyCheckSprite(tMemberData)
+	local member = self.tReadyCheckResults[tMemberData.strCharacterName]
+	if not member then
+		return "CRB_Raid:sprRaid_Icon_NotReadyDull"
+	end
+	
+	if not member.bHasSetReady then
+		-- No ready/not ready selection made yet.
+		return "CRB_Raid:sprRaid_Icon_NotReadyDull"
+	elseif member.bHasSetReady and not member.bIsReady then
+		-- Not ready
+		return "CRB_Raid:sprRaid_Icon_NotReadyDull"
+	elseif member.bHasSetReady and member.bIsReady then
+		-- Ready, yay :)
+		return "CRB_Raid:sprRaid_Icon_ReadyCheckDull"
+	else
+		-- Should not end up here, but just in case.
+		return "CRB_Raid:sprRaid_Icon_NotReadyDull"
+	end
 end
 
 function BetterRaidFrames:GetReadyCheckMemberData()
