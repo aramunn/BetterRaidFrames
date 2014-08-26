@@ -671,10 +671,8 @@ end
 
 function BetterRaidFrames:OnGroup_MemberFlagsChanged(nMemberIdx, bFromPromotion, tChangedFlags)
 	if not GroupLib.InRaid() then return end
-	if not tChangedFlags.bHasSetReady then
-		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
-	end
-	if tChangedFlags.bHasSetReady then
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
+	if tChangedFlags.bHasSetReady or (tChangedFlags.bDisconnected and self.bReadyCheckActive) then
 		self:OnReadyCheckMemberResponse(nMemberIdx)
 	end
 end
@@ -1419,7 +1417,11 @@ function BetterRaidFrames:OnReadyCheckMemberResponse(idx)
 	if self.bReadyCheckActive and bValidReadyCheckIdx then
 		local tRaidMember = self.arMemberIndexToWindow[idx]
 		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
-		if tMemberData.bHasSetReady and tMemberData.bReady then
+		if not tMemberData.bIsOnline then
+			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
+			self.tReadyCheckResults[tMemberData.strCharacterName].bHasSetReady = false
+			self.tReadyCheckResults[tMemberData.strCharacterName].bIsReady = false
+		elseif tMemberData.bHasSetReady and tMemberData.bReady then
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_ReadyCheckDull")
 			self.tReadyCheckResults[tMemberData.strCharacterName].bHasSetReady = true
 			self.tReadyCheckResults[tMemberData.strCharacterName].bIsReady = true
@@ -1448,7 +1450,10 @@ function BetterRaidFrames:MemberToReadyCheckSprite(tMemberData)
 		return "CRB_Raid:sprRaid_Icon_NotReadyDull"
 	end
 	
-	if not member.bHasSetReady then
+	if not tMemberData.bIsOnline then
+		-- member is offline, set to not ready
+		return "CRB_Raid:sprRaid_Icon_NotReadyDull"
+	elseif not member.bHasSetReady then
 		-- No ready/not ready selection made yet.
 		return "CRB_Raid:sprRaid_Icon_NotReadyDull"
 	elseif member.bHasSetReady and not member.bIsReady then
