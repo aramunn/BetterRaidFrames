@@ -1418,6 +1418,10 @@ function BetterRaidFrames:OnReadyCheckMemberResponse(idx)
 	local bValidReadyCheckIdx = self.tReadyCheckResults and self.tReadyCheckResults[tMemberData.strCharacterName]
 	if self.bReadyCheckActive and bValidReadyCheckIdx then
 		local tRaidMember = self.arMemberIndexToWindow[idx]
+		if not tRaidMember then
+			-- Happens in very rare cases, unknown why, but reported by some people.
+			return
+		end
 		local wndReadyCheckIcon = tRaidMember.wndRaidMemberReadyIcon
 		if not tMemberData.bIsOnline then
 			wndReadyCheckIcon:SetSprite("CRB_Raid:sprRaid_Icon_NotReadyDull")
