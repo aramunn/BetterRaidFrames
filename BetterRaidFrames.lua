@@ -1404,7 +1404,7 @@ function BetterRaidFrames:OnReadyCheckTimeout()
 		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, "The following members are Away: "..strMembersAway, "")
 	end
 	
-	if strMembersOfline ~= "" then
+	if strMembersOffline ~= "" then
 		ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, "The following members are Offline: "..strMembersOffline, "")
 	end
 	
