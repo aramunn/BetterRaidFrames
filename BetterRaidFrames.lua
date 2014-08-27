@@ -671,7 +671,9 @@ end
 
 function BetterRaidFrames:OnGroup_MemberFlagsChanged(nMemberIdx, bFromPromotion, tChangedFlags)
 	if not GroupLib.InRaid() then return end
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
+	if tChangedFlags.bRoleLocked or tChangedFlags.bTank or tChangedFlags.bHealer or tChangedFlags.bDPS or tChangedFlags.bCanInvite or tChangedFlags.bCanKick or tChangedFlags.bCanMark or tChangedFlags.bRaidAssist then
+		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
+	end
 	if tChangedFlags.bHasSetReady or (tChangedFlags.bDisconnected and self.bReadyCheckActive) then
 		self:OnReadyCheckMemberResponse(nMemberIdx)
 	end
@@ -866,7 +868,7 @@ function BetterRaidFrames:UpdateAllMembers()
 end
 
 local kfnSortCategoryMembers = function(a, b)
-	return a:GetData().strKey < b:GetData().strKey
+	return a:GetData().nCodeIdx  < b:GetData().nCodeIdx
 end
 
 function BetterRaidFrames:UpdateOffsets()
@@ -2050,19 +2052,20 @@ function BetterRaidFrames:CharacterToIdx(strCharacterName)
 	end
 end
 
-function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
+function BetterRaidFrames:FactoryMemberWindow(wndParent, nCodeIdx)
 	if self.cache == nil then
 		self.cache = {}
 	end
-
-	local tbl = self.cache[strKey]
+	
+	local tbl = self.cache[nCodeIdx]
+	
 	if tbl == nil or not tbl.wnd:IsValid() then
 		local wndNew = Apollo.LoadForm(self.xmlDoc, "RaidMember", wndParent, self)
-		wndNew:SetName(strKey)
+		wndNew:SetName(nCodeIdx)
 
 		tbl =
 		{
-			["strKey"] = strKey,
+			["nCodeIdx"] = nCodeIdx,
 			wnd = wndNew,
 			wndHealthBar = wndNew:FindChild("RaidMemberBtn:HealthBar"),
 			wndCurrHealthBar = wndNew:FindChild("RaidMemberBtn:HealthBar:CurrHealthBar"),
@@ -2080,7 +2083,7 @@ function BetterRaidFrames:FactoryMemberWindow(wndParent, strKey)
 			wndRaidMemberMarkIcon = wndNew:FindChild("RaidMemberMarkIcon"),
 		}
 		wndNew:SetData(tbl)
-		self.cache[strKey] = tbl
+		self.cache[nCodeIdx] = tbl
 
 		for strCacheKey, wndCached in pairs(self.cache) do
 			if not self.cache[strCacheKey].wnd:IsValid() then
