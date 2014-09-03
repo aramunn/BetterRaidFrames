@@ -19,6 +19,19 @@ local ktCategoryToSettingKeyPrefix =
 	ConfigColorsWarrior			= "strColorWarrior_",
 }
 
+local kBoostBuffs = {
+	"Brutality Boost",
+	"Finesse Boost",
+	"Grit Boost",
+	"Insight Boost",
+	"Moxie Boost",
+	"Tech Boost",
+}
+
+local kFoodBuffs = {
+	"Stuffed!",
+}
+
 local ktClassIdToClassName =
 {
 	[GameLib.CodeEnumClass.Esper] 			= "Esper",
@@ -153,6 +166,8 @@ local DefaultSettings = {
 	bShowIcon_Role		= false,
 	bShowIcon_Class		= false,
 	bShowIcon_Mark		= false,
+	bShowIcon_Food		= false,
+	bShowIcon_Boost		= false,
 	bShowFocus			= false,
 	bShowCategories		= true,
 	bShowNames			= true,
@@ -266,6 +281,7 @@ end
 function BetterRaidFrames:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("BetterRaidFrames.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)
+	Apollo.LoadSprites("BRF.xml")
 	
 	-- Configured our forms
 	self.wndConfig = Apollo.LoadForm(self.xmlDoc, "ConfigForm", nil, self)
@@ -356,6 +372,10 @@ function BetterRaidFrames:OnDocumentReady()
 	Apollo.RegisterTimerHandler("RaidUpdateTimer",							"OnRaidFrameBaseTimer", self)
 	Apollo.CreateTimer("RaidUpdateTimer", 0.2, true)
 	
+	-- Handlers for food/boost icons
+	Apollo.RegisterTimerHandler("BoostFoodUpdateTimer",							"OnBoostFoodUpdateTimer", self)
+	Apollo.CreateTimer("BoostFoodUpdateTimer", 1.0, true)
+	
 	Apollo.RegisterEventHandler("ChangeWorld", 								"OnChangeWorld", self)
 	Apollo.RegisterTimerHandler("TrackSavedCharactersTimer",				"TrackSavedCharacters", self)
 	
@@ -394,6 +414,8 @@ function BetterRaidFrames:OnDocumentReady()
 	self.wndRaidCustomizeLeaderIcons = wndRaidOptions:FindChild("RaidCustomizeLeaderIcons")
 	self.wndRaidCustomizeRoleIcons = wndRaidOptions:FindChild("RaidCustomizeRoleIcons")
 	self.wndRaidCustomizeMarkIcons = wndRaidOptions:FindChild("RaidCustomizeMarkIcons")
+	self.wndRaidCustomizeFoodIcons = wndRaidOptions:FindChild("RaidCustomizeFoodIcons")
+	self.wndRaidCustomizeBoostIcons = wndRaidOptions:FindChild("RaidCustomizeBoostIcons")
 	self.wndRaidCustomizeManaBar = wndRaidOptions:FindChild("RaidCustomizeManaBar")
 	self.wndRaidCustomizeCategories = wndRaidOptions:FindChild("RaidCustomizeCategories")
 	self.wndRaidCustomizeClassIcons = wndRaidOptions:FindChild("RaidCustomizeClassIcons")
@@ -462,6 +484,10 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndRaidCustomizeClassIcons:SetCheck(self.settings.bShowIcon_Class) end
 	if self.settings.bShowIcon_Mark ~= nil then
 		self.wndRaidCustomizeMarkIcons:SetCheck(self.settings.bShowIcon_Mark) end
+	if self.settings.bShowIcon_Food ~= nil then
+		self.wndRaidCustomizeFoodIcons:SetCheck(self.settings.bShowIcon_Food) end
+	if self.settings.bShowIcon_Boost ~= nil then
+		self.wndRaidCustomizeBoostIcons:SetCheck(self.settings.bShowIcon_Boost) end
 	if self.settings.bShowFocus ~= nil then
 		self.wndRaidCustomizeManaBar:SetCheck(self.settings.bShowFocus) end
 	if self.settings.bShowCategories ~= nil then
@@ -628,6 +654,65 @@ function BetterRaidFrames:OnRaidFrameBaseTimer()
 
 	self.nDirtyFlag = knDirtyNone
 end
+
+function BetterRaidFrames:OnBoostFoodUpdateTimer()
+	if self.settings.bDisableFrames or (not self.settings.bShowIcon_Food and not self.settings.bShowIcon_Boost) or not GroupLib.InRaid() then
+		return
+	end
+	
+	for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
+		local wndFoodIcon = tRaidMember.wndRaidMemberFoodIcon
+		local wndBoostIcon = tRaidMember.wndRaidMemberBoostIcon
+	
+		local tMemberData = GroupLib.GetGroupMember(idx)
+		local unitMember = GroupLib.GetUnitForGroupMember(idx)
+		
+		local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
+		local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+		local bIsOffline = not tMemberData.bIsOnline
+		
+		local bValidMember = not bOutOfRange and not bDead and not bIsOffline
+		
+		local wndFoodIcon = tRaidMember.wndRaidMemberFoodIcon
+		local wndBoostIcon = tRaidMember.wndRaidMemberBoostIcon
+		
+		if not bValidMember then
+			wndFoodIcon:SetSprite("BRF:Food_Disab_G")
+			wndBoostIcon:SetSprite("BRF:Boost_Disab_G")
+		else
+			local bHasFoodBuff = self:HasBuff(unitMember, kFoodBuffs)
+			local bHasBoostBuff = self:HasBuff(unitMember, kBoostBuffs)
+			if bHasFoodBuff then
+				wndFoodIcon:SetSprite("BRF:Food_Active")
+			else
+				wndFoodIcon:SetSprite("BRF:Food_Disab_G")
+			end
+			if bHasBoostBuff then
+				wndBoostIcon:SetSprite("BRF:Boost_Active")
+			else
+				wndBoostIcon:SetSprite("BRF:Boost_Disab_G")
+			end
+		end	
+	end
+end
+
+function BetterRaidFrames:HasBuff(unitMember, tBuffs)
+	if not unitMember then return false end
+	local unitBuffs = unitMember:GetBuffs().arBeneficial
+	if not unitBuffs then
+		return false
+	end
+	
+	for key, value in pairs(tBuffs) do
+		for k, v in pairs(unitBuffs) do
+			if v.splEffect:GetName() == value then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 
 -----------------------------------------------------------------------------------------------
 -- Main Draw Methods
@@ -934,6 +1019,14 @@ function BetterRaidFrames:ResizeMemberFrame(wndRaidMember)
 		-- GetWidth() is too much and leaves empty space.
 		nLeftOffset = nLeftOffset + 3 --tRaidMember.wndRaidMemberReadyIcon:GetWidth()
 	end
+	
+	if tRaidMember.wndRaidMemberFoodIcon:IsShown() then
+		nLeftOffset = nLeftOffset + tRaidMember.wndRaidMemberFoodIcon:GetWidth()
+	end
+	
+	if tRaidMember.wndRaidMemberBoostIcon:IsShown() then
+		nLeftOffset = nLeftOffset + tRaidMember.wndRaidMemberFoodIcon:GetWidth()
+	end
 
 	-- Resize Button
 	local wndRaidMemberBtn = tRaidMember.wndRaidMemberBtn
@@ -1146,7 +1239,31 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		wndReadyCheckIcon:SetSprite(self:MemberToReadyCheckSprite(tMemberData))
 	end
 	wndReadyCheckIcon:Show(self.bReadyCheckActive)
-
+	
+	-- Food icon
+	local wndFoodIcon = tRaidMember.wndRaidMemberFoodIcon
+	bShowFoodIcon = self.settings.bShowIcon_Food
+	if bShowFoodIcon then
+		if self:HasBuff(unitMember, kFoodBuffs) then
+			wndFoodIcon:SetSprite("BRF:Food_Active")
+		else
+			wndFoodIcon:SetSprite("BRF:Food_Disab_G")
+		end
+	end
+	wndFoodIcon:Show(bShowFoodIcon)
+	
+	-- Boost icon
+	local wndBoostIcon = tRaidMember.wndRaidMemberBoostIcon
+	bShowBoostIcon = self.settings.bShowIcon_Boost
+	if bShowBoostIcon then
+		if self:HasBuff(unitMember, kBoostBuffs) then
+			wndBoostIcon:SetSprite("BRF:Boost_Active")
+		else
+			wndBoostIcon:SetSprite("BRF:Boost_Disab_G")
+		end
+	end
+	wndBoostIcon:Show(bShowBoostIcon)
+	
 	-- HP and Shields
 	local unitPlayer = GameLib.GetPlayerUnit()
 	if tMemberData then
@@ -2085,6 +2202,8 @@ function BetterRaidFrames:FactoryMemberWindow(wndParent, nCodeIdx)
 			wndRaidMemberRoleIcon = wndNew:FindChild("RaidMemberRoleIcon"),
 			wndRaidMemberReadyIcon = wndNew:FindChild("RaidMemberReadyIcon"),
 			wndRaidMemberMarkIcon = wndNew:FindChild("RaidMemberMarkIcon"),
+			wndRaidMemberFoodIcon = wndNew:FindChild("RaidMemberFoodIcon"),
+			wndRaidMemberBoostIcon = wndNew:FindChild("RaidMemberBoostIcon"),
 		}
 		wndNew:SetData(tbl)
 		self.cache[nCodeIdx] = tbl
@@ -2176,6 +2295,18 @@ end
 
 function BetterRaidFrames:OnRaidCustomizeCombatLock( wndHandler, wndControl, eMouseButton )
 	self.settings.bAutoLock_Combat = wndHandler:IsChecked()
+end
+
+function BetterRaidFrames:OnRaidCustomizeFoodIconsCheck( wndHandler, wndControl, eMouseButton )
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+	self.settings.bShowIcon_Food = wndHandler:IsChecked()
+	self:OnBoostFoodUpdateTimer()
+end
+
+function BetterRaidFrames:OnRaidCustomizeBoostIconsCheck( wndHandler, wndControl, eMouseButton )
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+	self.settings.bShowIcon_Boost = wndHandler:IsChecked()
+	self:OnBoostFoodUpdateTimer()
 end
 
 ---------------------------------------------------------------------------------------------------
