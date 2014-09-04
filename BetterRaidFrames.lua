@@ -909,6 +909,24 @@ function BetterRaidFrames:UpdateAllMembers()
 			self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		end
 		
+		if not self.settings.bDisableFrames then
+			local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
+			local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+			local bIsOnline = tMemberData.bIsOnline
+			if not bOutOfRange and not bDead and bIsOnline then
+				-- Change the HP Bar Color if required for debuff tracking
+				local DebuffColorRequired = self:TrackDebuffsHelper(unitMember, tRaidMember)
+				-- Update Bar Colors
+				self:UpdateBarColors(tRaidMember, tMemberData, DebuffColorRequired)
+		
+				-- Update Text Overlays
+				-- We're appending on the raid member name which is the default text overlay
+				self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
+				self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
+				self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
+			end
+		end	
+		
 		-- Update opacity if out of range
 		if not self.settings.bDisableFrames then
 			self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
@@ -1113,18 +1131,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndCurrHealthBar:SetFullSprite("BasicSprites:WhiteFill")
 		tRaidMember.wndCurrShieldBar:SetFullSprite("BasicSprites:WhiteFill")
 		tRaidMember.wndCurrAbsorbBar:SetFullSprite("BasicSprites:WhiteFill")
-
-		-- Change the HP Bar Color if required for debuff tracking
-		local DebuffColorRequired = self:TrackDebuffsHelper(unitMember, tRaidMember)
-		-- Update Bar Colors
-		self:UpdateBarColors(tRaidMember, tMemberData, DebuffColorRequired)
-		
-		-- Update Text Overlays
-		-- We're appending on the raid member name which is the default text overlay
-		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
 	end
-	self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
-	self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
 end
 
 function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
@@ -1167,11 +1174,25 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	tRaidMember.wndCurrShieldBar:Show(tMemberData.nHealth > 0 and tMemberData.nShieldMax > 0)
 	tRaidMember.wndRaidMemberMouseHack:SetData(tMemberData.nMemberIdx)
 
-	bOutOfRange = tMemberData.nHealthMax == 0
+	bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
 	bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
 	unitMember = GroupLib.GetUnitForGroupMember(nCodeIdx) -- returns nil when out of range
 
 	self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+	
+	local bIsOnline = tMemberData.bIsOnline
+	if not bOutOfRange and not bDead and bIsOnline then
+		-- Change the HP Bar Color if required for debuff tracking
+		local DebuffColorRequired = self:TrackDebuffsHelper(unitMember, tRaidMember)
+		-- Update Bar Colors
+		self:UpdateBarColors(tRaidMember, tMemberData, DebuffColorRequired)
+		
+		-- Update Text Overlays
+		-- We're appending on the raid member name which is the default text overlay
+		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
+		self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
+		self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
+	end
 	
 	-- Update opacity if out of range
 	self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
