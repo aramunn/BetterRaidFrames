@@ -373,8 +373,12 @@ function BetterRaidFrames:OnDocumentReady()
 	Apollo.CreateTimer("RaidUpdateTimer", 0.2, true)
 	
 	-- Handlers for food/boost icons
-	Apollo.RegisterTimerHandler("BoostFoodUpdateTimer",							"OnBoostFoodUpdateTimer", self)
+	Apollo.RegisterTimerHandler("BoostFoodUpdateTimer",						"OnBoostFoodUpdateTimer", self)
 	Apollo.CreateTimer("BoostFoodUpdateTimer", 1.0, true)
+	
+	-- Handler for bar art update timer
+	Apollo.RegisterTimerHandler("UpdateBarArtTimer",						"OnUpdateBarArtTimer", self)
+	Apollo.CreateTimer("UpdateBarArtTimer", 0.2, true)
 	
 	Apollo.RegisterEventHandler("ChangeWorld", 								"OnChangeWorld", self)
 	Apollo.RegisterTimerHandler("TrackSavedCharactersTimer",				"TrackSavedCharacters", self)
@@ -900,15 +904,6 @@ function BetterRaidFrames:UpdateAllMembers()
 		 	unitMember = GroupLib.GetUnitForGroupMember(idx)
 		end
 		
-		-- Status variables
-		local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
-		local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
-		
-		-- Update bar art if dead -> no longer dead
-		if not self.settings.bDisableFrames then
-			self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
-		end
-		
 		if not self.settings.bDisableFrames then
 			local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
 			local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
@@ -1131,6 +1126,15 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndCurrHealthBar:SetFullSprite("BasicSprites:WhiteFill")
 		tRaidMember.wndCurrShieldBar:SetFullSprite("BasicSprites:WhiteFill")
 		tRaidMember.wndCurrAbsorbBar:SetFullSprite("BasicSprites:WhiteFill")
+	end
+end
+
+function BetterRaidFrames:OnUpdateBarArtTimer()
+	if self.settings.bDisableFrames or not GroupLib.InRaid() then return false end
+	for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
+		local unitMember = GroupLib.GetUnitForGroupMember(idx)
+		local tMemberData = GroupLib.GetGroupMember(idx)
+		self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 	end
 end
 
