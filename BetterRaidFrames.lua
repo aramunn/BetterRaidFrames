@@ -236,6 +236,7 @@ local DefaultSettings = {
 	
 	-- /brf advanced
 	fBarArtTimer = 0.2,
+	fBoostFoodTimer = 1,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -407,6 +408,7 @@ function BetterRaidFrames:OnDocumentReady()
 		self:NumColumnsHelper()
 		self:NumRowsHelper()
 		self:UpdateBarArtTimer()
+		self:UpdateBoostFoodTimer()
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -616,7 +618,11 @@ function BetterRaidFrames:RefreshSettings()
 	-- /brf advanced
 	if self.settings.fBarArtTimer ~= nil then
 		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BarArtTimerDisplay"):SetText(string.format("%ss", self.settings.fBarArtTimer))
-		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSlider:Slider_BarArtTimer"):SetValue(self.settings.fBarArtTimer * 10)
+		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSliderBarArt:Slider_BarArtTimer"):SetValue(self.settings.fBarArtTimer * 10)
+	end
+	if self.settings.fBoostFoodTimer ~= nil then
+		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BoostFoodTimerDisplay"):SetText(string.format("%ss", self.settings.fBoostFoodTimer))
+		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSliderBoostFood:Slider_BoostFoodTimer"):SetValue(self.settings.fBoostFoodTimer * 10)
 	end
 end
 
@@ -2651,13 +2657,32 @@ end
 function BetterRaidFrames:OnBarArtTimerReset( wndHandler, wndControl, eMouseButton )
 	self.settings.fBarArtTimer = DefaultSettings.fBarArtTimer
 	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BarArtTimerDisplay"):SetText(string.format("%ss", self.settings.fBarArtTimer))
-	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSlider:Slider_BarArtTimer"):SetValue(self.settings.fBarArtTimer * 10)
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSliderBarArt:Slider_BarArtTimer"):SetValue(self.settings.fBarArtTimer * 10)
 	self:UpdateBarArtTimer()
 end
 
 function BetterRaidFrames:UpdateBarArtTimer()
 	Apollo.StopTimer("UpdateBarArtTimer")
 	Apollo.CreateTimer("UpdateBarArtTimer", self.settings.fBarArtTimer, true)
+end
+
+function BetterRaidFrames:Slider_BoostFoodTimer( wndHandler, wndControl, fNewValue, fOldValue )
+	if math.floor(fNewValue) == math.floor(fOldValue) then return end
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BoostFoodTimerDisplay"):SetText(string.format("%ss", math.floor(fNewValue) / 10))
+	self.settings.fBoostFoodTimer = math.floor(fNewValue) / 10
+	self:UpdateBoostFoodTimer()
+end
+
+function BetterRaidFrames:OnBoostFoodTimerReset( wndHandler, wndControl, eMouseButton )
+	self.settings.fBoostFoodTimer = DefaultSettings.fBoostFoodTimer
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BoostFoodTimerDisplay"):SetText(string.format("%ss", self.settings.fBoostFoodTimer))
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSliderBoostFood:Slider_BoostFoodTimer"):SetValue(self.settings.fBoostFoodTimer * 10)
+	self:UpdateBoostFoodTimer()
+end
+
+function BetterRaidFrames:UpdateBoostFoodTimer()
+	Apollo.StopTimer("BoostFoodUpdateTimer")
+	Apollo.CreateTimer("BoostFoodUpdateTimer", self.settings.fBoostFoodTimer, true)
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
