@@ -2633,19 +2633,19 @@ end
 -- ConfigAdvancedGeneral Functions
 ---------------------------------------------------------------------------------------------------
 
-function BetterRaidFrames:Slider_BarArtTimer( wndHandler, wndControl, fNewValue, fOldValue )
-	if math.floor(fNewValue) == math.floor(fOldValue) then return end
-	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BarArtTimerDisplay"):SetText(string.format("%ss", math.floor(fNewValue) / 10))
-	self.settings.fBarArtTimer = math.floor(fNewValue) / 10
-	self:UpdateBarArtTimer()
-end
-
 function BetterRaidFrames:Button_AdvancedSettingsGeneralUncheck( wndHandler, wndControl, eMouseButton )
 	self.wndConfigAdvancedGeneral:Show(false)
 end
 
 function BetterRaidFrames:OnConfigAdvancedCloseButton( wndHandler, wndControl, eMouseButton )
 	self.wndConfigAdvanced:Show(false)
+end
+
+function BetterRaidFrames:Slider_BarArtTimer( wndHandler, wndControl, fNewValue, fOldValue )
+	if math.floor(fNewValue) == math.floor(fOldValue) then return end
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BarArtTimerDisplay"):SetText(string.format("%ss", math.floor(fNewValue) / 10))
+	self.settings.fBarArtTimer = math.floor(fNewValue) / 10
+	self:UpdateBarArtTimer()
 end
 
 function BetterRaidFrames:OnBarArtTimerReset( wndHandler, wndControl, eMouseButton )
