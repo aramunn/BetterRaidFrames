@@ -233,6 +233,9 @@ local DefaultSettings = {
 	strColorWarrior_HPDebuff = "ff8b008b",
 	strColorWarrior_Shield = "ff2574a9",
 	strColorWarrior_Absorb = "ffca7819",
+	
+	-- /brf advanced
+	fBarArtTimer = 0.2,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -299,6 +302,11 @@ function BetterRaidFrames:OnLoad()
 	self.wndConfigColorsStalker = Apollo.LoadForm(self.xmlDoc, "ConfigColorsStalker", self.wndTargetFrame, self)
 	self.wndConfigColorsWarrior = Apollo.LoadForm(self.xmlDoc, "ConfigColorsWarrior", self.wndTargetFrame, self)
 	
+	self.wndConfigAdvanced = Apollo.LoadForm(self.xmlDoc, "ConfigAdvancedForm", nil, self)
+	self.wndConfigAdvanced:Show(false)
+	self.wndAdvancedTargetFrame = self.wndConfigAdvanced:FindChild("TargetFrame")
+	self.wndConfigAdvancedGeneral = Apollo.LoadForm(self.xmlDoc, "ConfigAdvancedGeneral", self.wndAdvancedTargetFrame, self)
+		
 	-- Register handler for slash commands that open the configuration form
 	Apollo.RegisterSlashCommand("brf", "OnSlashCmd", self)
 	
@@ -398,6 +406,7 @@ function BetterRaidFrames:OnDocumentReady()
 		self:LockFrameHelper(self.settings.bLockFrame)
 		self:NumColumnsHelper()
 		self:NumRowsHelper()
+		self:UpdateBarArtTimer()
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -603,6 +612,12 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfigColorsWarrior:FindChild("Label_ColorSettingsOuter:Shield:ColorWindow"):SetBGColor(self.settings.strColorWarrior_Shield) end
 	if self.settings.strColorWarrior_Absorb ~= nil then
 		self.wndConfigColorsWarrior:FindChild("Label_ColorSettingsOuter:Absorb:ColorWindow"):SetBGColor(self.settings.strColorWarrior_Absorb) end
+		
+	-- /brf advanced
+	if self.settings.fBarArtTimer ~= nil then
+		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BarArtTimerDisplay"):SetText(string.format("%ss", self.settings.fBarArtTimer))
+		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSlider:Slider_BarArtTimer"):SetValue(self.settings.fBarArtTimer * 10)
+	end
 end
 
 function BetterRaidFrames:OnCharacterCreated()
@@ -2489,10 +2504,13 @@ function BetterRaidFrames:OnSlashCmd(sCmd, sInput)
 		self:CPrint("Thanks for using BetterRaidFrames :)")
 		self:CPrint("/brf options - Options Menu")
 		self:CPrint("/brf colors - Customize Bar Colors")
+		self:CPrint("/brf advanced - Advanced options, such as controlling timers")
 	elseif option == "options" then
 		self:OnConfigOn()
 	elseif option == "colors" then
 		self:OnConfigColorsOn()
+	elseif option == "advanced" then
+		self:OnConfigAdvancedOn()
 	end
 end
 
@@ -2594,6 +2612,52 @@ end
 function BetterRaidFrames:OnGeminiColor(strColor, strCategory, strIdentifier, strCategorySettingKey)
 	strIdentifier:FindChild("ColorWindow"):SetBGColor(strColor)
 	self.settings[strCategorySettingKey] = strColor
+end
+
+---------------------------------------------------------------------------------------------------
+-- ConfigAdvancedForm Functions
+---------------------------------------------------------------------------------------------------
+
+function BetterRaidFrames:OnConfigAdvancedOn()
+	self:RefreshSettings()
+	self.wndConfigAdvanced:Show(true)
+	self.wndConfigAdvanced:FindChild("Button_SettingsGeneral"):SetCheck(true)
+	self.wndConfigAdvancedGeneral:Show(true)
+end
+
+function BetterRaidFrames:Button_AdvancedSettingsGeneralCheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigAdvancedGeneral:Show(true)
+end
+
+---------------------------------------------------------------------------------------------------
+-- ConfigAdvancedGeneral Functions
+---------------------------------------------------------------------------------------------------
+
+function BetterRaidFrames:Slider_BarArtTimer( wndHandler, wndControl, fNewValue, fOldValue )
+	if math.floor(fNewValue) == math.floor(fOldValue) then return end
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BarArtTimerDisplay"):SetText(string.format("%ss", math.floor(fNewValue) / 10))
+	self.settings.fBarArtTimer = math.floor(fNewValue) / 10
+	self:UpdateBarArtTimer()
+end
+
+function BetterRaidFrames:Button_AdvancedSettingsGeneralUncheck( wndHandler, wndControl, eMouseButton )
+	self.wndConfigAdvancedGeneral:Show(false)
+end
+
+function BetterRaidFrames:OnConfigAdvancedCloseButton( wndHandler, wndControl, eMouseButton )
+	self.wndConfigAdvanced:Show(false)
+end
+
+function BetterRaidFrames:OnBarArtTimerReset( wndHandler, wndControl, eMouseButton )
+	self.settings.fBarArtTimer = DefaultSettings.fBarArtTimer
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BarArtTimerDisplay"):SetText(string.format("%ss", self.settings.fBarArtTimer))
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSlider:Slider_BarArtTimer"):SetValue(self.settings.fBarArtTimer * 10)
+	self:UpdateBarArtTimer()
+end
+
+function BetterRaidFrames:UpdateBarArtTimer()
+	Apollo.StopTimer("UpdateBarArtTimer")
+	Apollo.CreateTimer("UpdateBarArtTimer", self.settings.fBarArtTimer, true)
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
