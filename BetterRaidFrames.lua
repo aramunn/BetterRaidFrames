@@ -237,6 +237,7 @@ local DefaultSettings = {
 	-- /brf advanced
 	fBarArtTimer = 0.2,
 	fBoostFoodTimer = 1,
+	fMainUpdateTimer = 0.2,
 }
 
 DefaultSettings.__index = DefaultSettings	
@@ -409,6 +410,7 @@ function BetterRaidFrames:OnDocumentReady()
 		self:NumRowsHelper()
 		self:UpdateBarArtTimer()
 		self:UpdateBoostFoodTimer()
+		self:UpdateMainUpdateTimer()
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -623,6 +625,10 @@ function BetterRaidFrames:RefreshSettings()
 	if self.settings.fBoostFoodTimer ~= nil then
 		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_BoostFoodTimerDisplay"):SetText(string.format("%ss", self.settings.fBoostFoodTimer))
 		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSliderBoostFood:Slider_BoostFoodTimer"):SetValue(self.settings.fBoostFoodTimer * 10)
+	end
+	if self.settings.fMainUpdateTimer ~= nil then
+		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_MainUpdateTimerDisplay"):SetText(string.format("%ss", self.settings.fMainUpdateTimer))
+		self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSliderMainUpdate:Slider_MainUpdateTimer"):SetValue(self.settings.fMainUpdateTimer * 10)
 	end
 end
 
@@ -2683,6 +2689,25 @@ end
 function BetterRaidFrames:UpdateBoostFoodTimer()
 	Apollo.StopTimer("BoostFoodUpdateTimer")
 	Apollo.CreateTimer("BoostFoodUpdateTimer", self.settings.fBoostFoodTimer, true)
+end
+
+function BetterRaidFrames:Slider_MainUpdateTimer( wndHandler, wndControl, fNewValue, fOldValue )
+	if math.floor(fNewValue) == math.floor(fOldValue) then return end
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_MainUpdateTimerDisplay"):SetText(string.format("%ss", math.floor(fNewValue) / 10))
+	self.settings.fMainUpdateTimer = math.floor(fNewValue) / 10
+	self:UpdateMainUpdateTimer()
+end
+
+function BetterRaidFrames:OnMainUpdateTimerReset( wndHandler, wndControl, eMouseButton )
+	self.settings.fMainUpdateTimer = DefaultSettings.fMainUpdateTimer
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Label_MainUpdateTimerDisplay"):SetText(string.format("%ss", self.settings.fMainUpdateTimer))
+	self.wndConfigAdvancedGeneral:FindChild("Label_AdvancedSettingsOuter:Window_RangeSliderMainUpdate:Slider_MainUpdateTimer"):SetValue(self.settings.fMainUpdateTimer * 10)
+	self:UpdateMainUpdateTimer()
+end
+
+function BetterRaidFrames:UpdateMainUpdateTimer()
+	Apollo.StopTimer("RaidUpdateTimer")
+	Apollo.CreateTimer("RaidUpdateTimer", self.settings.fMainUpdateTimer, true)
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
