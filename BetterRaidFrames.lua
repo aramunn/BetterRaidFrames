@@ -696,6 +696,10 @@ function BetterRaidFrames:OnBoostFoodUpdateTimer()
 		local wndBoostIcon = tRaidMember.wndRaidMemberBoostIcon
 	
 		local tMemberData = GroupLib.GetGroupMember(idx)
+		-- Can happen with a high main update timer and lower boost/food update timer
+		if not tMemberData then
+			return
+		end
 		local unitMember = GroupLib.GetUnitForGroupMember(idx)
 		
 		local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
@@ -1095,6 +1099,10 @@ function BetterRaidFrames:UpdateRaidOptions(nCodeIdx, tMemberData)
 end
 
 function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
+	-- Happens when bar update timer is faster than the main updater and a new raid is joined.
+	if not tMemberData or not tRaidMember then
+		return
+	end
 	local wndMemberBtn = tRaidMember.wndRaidMemberBtn
 
 	local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
