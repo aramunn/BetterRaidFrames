@@ -653,7 +653,7 @@ function BetterRaidFrames:ShowVariables()
 	end
 	self:CPrint("tNamedGroups:")
 	for k,v in pairs(self.tNamedGroups) do
-		self:CPrint("Key: " .. k .. " Group: " .. v .. " Members: " .. self.tNamedGroups[k])
+		self:CPrint("Key: " .. k .. " Members: " .. v)
 	end
 	self:CPrint("Group: " .. self.settings.strMyGroup)
 	self:CPrint("Channel: " .. self.settings.strChannelName)
@@ -709,13 +709,15 @@ function BetterRaidFrames:RemovePlayerFromGroup(idx, strGroup)
 	
 	self:CPrint("Removing player with idx " .. idx .. " from group " .. strGroup)
 	self.tMemberToGroup[idx] = nil
-	self.tNamedGroups[strGroup] = self.tNamedGroups[strGroup] - 1
-	if self.tNamedGroups[strGroup] <= 0 then
-		self:CPrint("Group " .. strGroup .. " no longer has any players. Removing.")
-		self.tNamedGroups[strGroup] = nil
-		return knDirtyGeneral
+	if self.tNamedGroups[strGroup] ~= nil then
+		self.tNamedGroups[strGroup] = self.tNamedGroups[strGroup] - 1
+		if self.tNamedGroups[strGroup] <= 0 then
+			self:CPrint("Group " .. strGroup .. " no longer has any players. Removing.")
+			self.tNamedGroups[strGroup] = nil
+			return knDirtyGeneral
+		end
 	end
-	
+
 	return knDirtyMembers
 end
 
@@ -2779,6 +2781,7 @@ function BetterRaidFrames:OnSetChannel(tokens)
 	local chanName = tokens[2]
 	self.settings.strChannelName = chanName
 	self:JoinBRFChannel(chanName)
+	self:SendSync()
 end
 
 -- Command: /brf group <name>
