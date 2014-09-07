@@ -785,12 +785,12 @@ function BetterRaidFrames:ParseUpdate(tMsg, idx, tMemberData)
 
 	if tMsg.strGroupOld ~= nil then
 		self:CPrint("Removing from old group " .. tMsg.strGroupOld)
-		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, self:RemovePlayerFromGroup(idx, tMsg.strGroupOld))
+		self:RemovePlayerFromGroup(idx, tMsg.strGroupOld)
 	end
 	
 	self:CPrint("Adding " .. idx .. " to group " .. tMsg.strGroup)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, self:AddPlayerToGroup(idx, tMsg.strGroup))
-
+	self:AddPlayerToGroup(idx, tMsg.strGroup)
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 end
 
 function BetterRaidFrames:SendSync()
