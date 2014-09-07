@@ -412,13 +412,6 @@ function BetterRaidFrames:OnDocumentReady()
 	function BetterRaidFrames:OnWindowManagementReady()
 		self.settings.bUseGroups = true -- DEBUGGING: Remove when there is an actual setting for this.
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
-		if self.settings.strChannelName ~= nil then
-			self:JoinBRFChannel(self.settings.strChannelName)
-			self:SetDefaultGroup()
-			if GroupLib.InRaid() then
-				self:SendSync()
-			end
-		end
 		self:LockFrameHelper(self.settings.bLockFrame)
 		self:NumColumnsHelper()
 		self:NumRowsHelper()
@@ -786,6 +779,13 @@ function BetterRaidFrames:ParseUpdate(tMsg, idx, tMemberData)
 		return 
 	end
 
+	-- Sort of a hack. If its a sync reply its an UPDATE with a target,
+	-- which means they've been put into 'Raid' by SetDefaultGroup(), which
+	-- they may not actually be in! So lets remove them from it
+	if tMsg.strTargetName and tMsg.strGroup ~= "Raid" then
+		tMsg.strGroupOld = "Raid"
+	end
+
 	if tMsg.strGroupOld ~= nil then
 		self:CPrint("Removing from old group " .. tMsg.strGroupOld)
 		self:RemovePlayerFromGroup(idx, tMsg.strGroupOld)
@@ -823,6 +823,13 @@ function BetterRaidFrames:OnCharacterCreated()
 	local unitPlayer = GameLib.GetPlayerUnit()
 	self.kstrMyName = unitPlayer:GetName()
 	self.unitTarget = GameLib.GetTargetUnit()
+	if self.settings.strChannelName ~= nil then
+		self:SetDefaultGroup()
+		self:JoinBRFChannel(self.settings.strChannelName)
+		if GroupLib.InRaid() then
+			self:SendSync()
+		end
+	end
 	self:BuildAllFrames()
 	self:ResizeAllFrames()
 end
@@ -2783,6 +2790,7 @@ function BetterRaidFrames:OnSetChannel(tokens)
 	end
 	local chanName = tokens[2]
 	self.settings.strChannelName = chanName
+	self:SetDefaultGroup()
 	self:JoinBRFChannel(chanName)
 	self:SendSync()
 end
