@@ -312,6 +312,10 @@ function BetterRaidFrames:OnLoad()
 	-- Register handler for slash commands that open the configuration form
 	Apollo.RegisterSlashCommand("brf", "OnSlashCmd", self)
 	
+	-- Register ICCommLib stuff.
+	self.tNamedGroups = {}
+	self.tMemberToGroup = {}
+	
 	self.settings = self.settings or {}
 	setmetatable(self.settings, DefaultSettings)
 	
@@ -405,6 +409,13 @@ function BetterRaidFrames:OnDocumentReady()
 	-- Sets the party frame location once windows are ready.
 	function BetterRaidFrames:OnWindowManagementReady()
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
+		if self.settings.strChannelName ~= nil then
+			self:JoinBRFChannel(self.settings.strChannelName)
+			self:SetDefaultGroup()
+			if GroupLib.InRaid() then
+				self:SendSync()
+			end
+		end
 		self:LockFrameHelper(self.settings.bLockFrame)
 		self:NumColumnsHelper()
 		self:NumRowsHelper()
@@ -632,11 +643,176 @@ function BetterRaidFrames:RefreshSettings()
 	end
 end
 
+
+
+-- DEBUGGING. Remove before merging -Morf
+function BetterRaidFrames:ShowVariables()
+	self:CPrint("tMemberToGroup:")
+	for k,v in pairs(self.tMemberToGroup) do
+		self:CPrint("key: " .. k .. " value: " .. v)
+	end
+	self:CPrint("tNamedGroups:")
+	for k,v in pairs(self.tNamedGroups) do
+		self:CPrint("Key: " .. k .. " Group: " .. v .. " Members: " .. self.tNamedGroups[k])
+	end
+	self:CPrint("Group: " .. self.settings.strMyGroup)
+	self:CPrint("Channel: " .. self.settings.strChannelName)
+end
+
+----------- Manage tNamedGroups and tMemberToGroup. -------
+
+-- Used whenever UI is loaded and/or you join a raid.
+-- We save our own previous group, but not everyone elses.
+-- Their group will get updated anyway as we sync.
+function BetterRaidFrames:SetDefaultGroup()
+	if not GroupLib.InRaid() then return end
+	
+	local nMembers = GroupLib.GetMemberCount()
+	self.tMemberToGroup = {}
+	self.tNamedGroups = {["Raid"] = nMembers-1, [self.settings.strMyGroup] = 1}
+
+	for idx = 1, nMembers do
+		local tMemberData = GroupLib.GetGroupMember(idx)
+		if tMemberData.strCharacterName == self.kstrMyName then
+			self.tMemberToGroup[idx] = self.settings.strMyGroup
+		else
+			self.tMemberToGroup[idx] = "Raid"
+		end
+	end
+end
+		
+-- tNamedGroups is a table of ["GroupName"] -> MemberCount
+-- tMemberToGroup is a table of Index -> GroupName
+function BetterRaidFrames:AddPlayerToGroup(idx, strGroup)
+	if self.chanBrf == nil then return end
+	
+	self:CPrint("Adding player with idx " .. idx .. " to group " .. strGroup)
+	self.tMemberToGroup[idx] = strGroup
+	if self.tNamedGroups[strGroup] == nil then
+		self:CPrint("Group didn't exist before, creating.")
+		self.tNamedGroups[strGroup] = 1
+		return knDirtyGeneral
+	else
+		self:CPrint("Group already existed. Counter now at " .. self.tNamedGroups[strGroup])
+		self.tNamedGroups[strGroup] = self.tNamedGroups[strGroup] + 1
+		return knDirtyMembers
+	end
+end
+
+function BetterRaidFrames:RemovePlayerFromGroup(idx, strGroup)
+	if self.chanBrf == nil then return end
+	
+	self:CPrint("Removing player with idx " .. idx .. " from group " .. strGroup)
+	self.tMemberToGroup[idx] = nil
+	self.tNamedGroups[strGroup] = self.tNamedGroups[strGroup] - 1
+	if self.tNamedGroups[strGroup] <= 0 then
+		self:CPrint("Group " .. strGroup .. " no longer has any players. Removing.")
+		self.tNamedGroups[strGroup] = nil
+		return knDirtyGeneral
+	end
+	
+	return knDirtyMembers
+end
+
+function BetterRaidFrames:SendBRFMessage(tMsg)
+	if self.chanBrf == nil then return end
+		
+	self:CPrint("Sending message.. Type:" .. tMsg.strMsgType .. " Char: " .. tMsg.strCharacterName)
+	self.chanBrf:SendMessage(tMsg)
+end
+
+function BetterRaidFrames:OnBRFMessage(channel, tMsg)
+	self:CPrint("Received message... Type:" .. tMsg.strMsgType .. " Char:" .. tMsg.strCharacterName)
+	-- Ignore when not in a raid, or invalid message type.
+	if not GroupLib.InRaid() or tMsg.strMsgType == nil then
+		self:CPrint("Not in a raid.") 
+		return 
+	end
+
+	-- Only parse if we have a character by that name in the raid.
+	local nGroupMemberCount = GroupLib.GetMemberCount()
+	local tMemberList = {}
+	for idx = 1, nGroupMemberCount do
+		local tMemberData = GroupLib.GetGroupMember(idx)
+		if tMemberData.strCharacterName == tMsg.strCharacterName then
+			self:CPrint("Found matching character: " .. tMsg.strCharacterName)
+			return self:ParseBRFMessage(tMsg, idx, tMemberData)
+		end
+	end
+	self:CPrint("Found no matching character (" .. tMsg.strCharacterName .. ")")
+end
+
+-- A BRFMessage is a table consisting of:
+-- strCharacterName = The name of the unit
+-- strMsgType = "UPDATE" or "SYNC"
+-- A SYNC asks all other clients in the raid to tell you their group.
+-- An UPDATE tells everyone else of a change. If it has a strTargetName its meant for a specific person.
+
+-- SYNC's cause targetted UPDATE's to be sent back, which are an UPDATE that should only be
+-- reacted to by a specific person. UPDATE's without the strTargetName field are supposed to apply to everyone
+-- in the raid group.
+function BetterRaidFrames:ParseBRFMessage(tMsg, idx, tMemberData)
+	if tMsg.strMsgType == "SYNC" then
+		return self:ParseSync(tMsg, idx, tMemberData)
+	elseif tMsg.strMsgType == "UPDATE" then
+		return self:ParseUpdate(tMsg, idx, tMemberData)
+	end
+end
+
+function BetterRaidFrames:ParseSync(tMsg, idx, tMemberData)
+	local msg = {}
+	msg.strCharacterName = self.kstrMyName
+	msg.strMsgType = "UPDATE"
+	msg.strTargetName = tMsg.strCharacterName -- to specific person..
+	msg.strGroup = self.settings.strMyGroup
+	self:SendBRFMessage(msg)
+	if msg.strCharacterName == msg.strTargetName then
+		self:OnBRFMessage(self.chanBrf, msg)
+	end
+end
+
+function BetterRaidFrames:ParseUpdate(tMsg, idx, tMemberData)
+	if tMsg.strTargetName ~= nil and tMsg.strTargetName ~= self.kstrMyName then 
+		return 
+	end
+
+	if tMsg.strGroupOld ~= nil then
+		self:CPrint("Removing from old group " .. tMsg.strGroupOld)
+		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, self:RemovePlayerFromGroup(idx, tMsg.strGroupOld))
+	end
+	
+	self:CPrint("Adding " .. idx .. " to group " .. tMsg.strGroup)
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, self:AddPlayerToGroup(idx, tMsg.strGroup))
+
+end
+
+function BetterRaidFrames:SendSync()
+	if self.chanBrf == nil then return end
+
+	local msg = {}
+	msg.strCharacterName = self.kstrMyName
+	msg.strMsgType = "SYNC"
+	self:SendBRFMessage(msg)
+	self:OnBRFMessage(self.chanBrf, msg)
+end
+
+function BetterRaidFrames:SendUpdate(strCharacterName, strGroup, strGroupOld)
+	if self.chanBrf == nil then return end
+	
+	self:CPrint("Creating message.")
+	local msg = {}
+	msg.strCharacterName = strCharacterName
+	msg.strGroup = strGroup
+	msg.strGroupOld = strGroupOld
+	msg.strMsgType = "UPDATE"
+	self:SendBRFMessage(msg)
+	self:OnBRFMessage(self.chanBrf, msg)
+end
+
 function BetterRaidFrames:OnCharacterCreated()
 	local unitPlayer = GameLib.GetPlayerUnit()
 	self.kstrMyName = unitPlayer:GetName()
 	self.unitTarget = GameLib.GetTargetUnit()
-
 	self:BuildAllFrames()
 	self:ResizeAllFrames()
 end
@@ -759,6 +935,11 @@ end
 
 function BetterRaidFrames:OnGroup_Join()
 	if not GroupLib.InRaid() then return end
+	
+	if self.settings.strChannelName ~= nil then
+		self:SetDefaultGroup()
+		self:SendSync()
+	end
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 end
 
@@ -828,6 +1009,7 @@ function BetterRaidFrames:BuildAllFrames()
 		self.nPrevMemberCount = nGroupMemberCount
 	end
 
+	
 	local tMemberList = {}
 	for idx = 1, nGroupMemberCount do
 		tMemberList[idx] = {idx, GroupLib.GetGroupMember(idx)}
@@ -838,6 +1020,15 @@ function BetterRaidFrames:BuildAllFrames()
 		tCategoriesToUse = ktRoleCategoriesToUse
 	end
 
+	if self.settings.bUseGroups then
+		local cats = {}
+		for key, strCurrCategory in pairs(self.tNamedGroups) do
+			table.insert(cats, key)
+			self:CPrint("BuildAllFrames: Category: " .. key)
+		end
+		tCategoriesToUse = cats
+	end
+	
 	local nInvalidOrDeadMembers = 0
 	local unitTarget = self.unitTarget
 	local bFrameLocked = self.settings.bLockFrame or self.wndRaidLockFrameBtn:IsChecked()
@@ -863,8 +1054,17 @@ function BetterRaidFrames:BuildAllFrames()
 		end
 
 		if wndRaidCategoryBtn:IsEnabled() and not wndRaidCategoryBtn:IsChecked() then
+			-- Dummy entry to make non-sparse, sortable table.
+			tMemberList[0] = {-1, {["strCharacterName"] = "zzzzzzLast"}}
+			-- Sort alphabetically in ascending order.
+			local sort_func = function( a,b )
+				return a[2].strCharacterName < b[2].strCharacterName
+			end
+			table.sort(tMemberList, sort_func)
 			for idx, tCurrMemberList in pairs(tMemberList) do
-				self:UpdateMemberFrame(tCategory, tCurrMemberList, strCurrCategory)
+				if tCurrMemberList[1] ~= -1 then -- Skip the dummy entry added before.
+					self:UpdateMemberFrame(tCategory, tCurrMemberList, strCurrCategory)
+				end
 			end
 		end
 
@@ -906,7 +1106,8 @@ function BetterRaidFrames:UpdateMemberFrame(tCategory, tCurrMemberList, strCateg
 
 	local nCodeIdx = tCurrMemberList[1] -- Since actual lua index can change
 	local tMemberData = tCurrMemberList[2]
-	if tMemberData and self:HelperVerifyMemberCategory(strCategory, tMemberData) then
+	if tMemberData and self:HelperVerifyMemberCategory(strCategory, tMemberData, nCodeIdx) then
+		self:CPrint("UpdateMemberFrame for: " .. tCurrMemberList[2].strCharacterName .. " into category: " .. strCategory)
 		local tRaidMember = self:FactoryMemberWindow(wndRaidCategoryItems, nCodeIdx)
 		self:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
 		self.arMemberIndexToWindow[nCodeIdx] = tRaidMember
@@ -1763,6 +1964,8 @@ function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 		if wndCategory ~= nil then
 			local wndMember = wndCategory:FindChild(nMemberIdx)
 			if wndMember ~= nil then
+				local strGroupName = self.tMemberToGroup[nMemberIdx]
+				self:RemovePlayerFromGroup(nMemberIdx, strGroupName)
 				self.arMemberIndexToWindow[nMemberIdx] = nil
 				wndMember:Destroy()
 			end
@@ -1854,15 +2057,20 @@ function BetterRaidFrames:OnEnteredCombat(unit, bInCombat)
 	end
 end
 
-function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberData)
+function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberData, nMemberIdx)
 	local bResult = true
-	if strCurrCategory == Apollo.GetString("RaidFrame_Tanks") then
-		bResult =  tMemberData.bTank
-	elseif strCurrCategory == Apollo.GetString("RaidFrame_Healers") then
-		bResult = tMemberData.bHealer
-	elseif strCurrCategory == Apollo.GetString("RaidFrame_DPS") then
-		bResult = not tMemberData.bTank and not tMemberData.bHealer
+	if self.settings.bUseGroups then
+		bResult = strCurrCategory == self.tMemberToGroup[nMemberIdx]
+	else
+		if strCurrCategory == Apollo.GetString("RaidFrame_Tanks") then
+			bResult =  tMemberData.bTank
+		elseif strCurrCategory == Apollo.GetString("RaidFrame_Healers") then
+			bResult = tMemberData.bHealer
+		elseif strCurrCategory == Apollo.GetString("RaidFrame_DPS") then
+			bResult = not tMemberData.bTank and not tMemberData.bHealer
+		end
 	end
+
 	return bResult
 end
 
@@ -2281,6 +2489,7 @@ function BetterRaidFrames:FactoryMemberWindow(wndParent, nCodeIdx)
 end
 
 function BetterRaidFrames:FactoryCategoryWindow(wndParent, strKey)
+	self:CPrint("FactoryCategoryWindow: " .. strKey)
 	if self.cache == nil then
 		self.cache = {}
 	end
@@ -2518,8 +2727,19 @@ function BetterRaidFrames:CPrint(str)
 	ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Command, str, "")
 end
 
+function BetterRaidFrames:Tokenize(str)
+	local idx = 1
+	local out = {}
+	for word in string.gmatch(str, "%S+") do
+		out[idx] = word
+		idx = idx + 1
+	end
+	return out
+end
+
 function BetterRaidFrames:OnSlashCmd(sCmd, sInput)
 	local option = string.lower(sInput)
+	local optionTokenized = self:Tokenize(sInput)
 	if option == nil or option == "" then
 		self:CPrint("Thanks for using BetterRaidFrames :)")
 		self:CPrint("/brf options - Options Menu")
@@ -2531,6 +2751,39 @@ function BetterRaidFrames:OnSlashCmd(sCmd, sInput)
 		self:OnConfigColorsOn()
 	elseif option == "advanced" then
 		self:OnConfigAdvancedOn()
+	elseif string.lower(optionTokenized[1]) == "channel" then
+		self:OnSetChannel(optionTokenized)
+	elseif string.lower(optionTokenized[1]) == "group" then
+		self:OnSetGroup(optionTokenized)
+	end
+end
+
+function BetterRaidFrames:JoinBRFChannel(chan)
+	self.chanBrf = ICCommLib.JoinChannel(chan, "OnBRFMessage", self)
+	self:CPrint("Your BRF communication channel is now: " .. chan)
+end
+
+-- Command: /brf channel <name>
+function BetterRaidFrames:OnSetChannel(tokens)
+	local chanName = tokens[2]
+	self.settings.strChannelName = chanName
+	self:JoinBRFChannel(chanName)
+end
+
+-- Command: /brf group <name>
+function BetterRaidFrames:OnSetGroup(tokens)
+	local groupName = tokens[2]
+	
+	if groupName == self.settings.strMyGroup then
+		self:CPrint("You are already in that group.")
+	end
+	
+	local oldGroup = self.settings.strMyGroup
+	self.settings.strMyGroup = groupName
+	self:CPrint("Your group is now set to: " .. groupName .. " (was " .. oldGroup .. ")")
+	if GroupLib.InRaid() then
+		self:CPrint("Updating...")
+		self:SendUpdate(self.kstrMyName, groupName, oldGroup)
 	end
 end
 
