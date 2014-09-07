@@ -1709,7 +1709,7 @@ function BetterRaidFrames:OnRaidMemberBtnClick(wndHandler, wndControl, eMouseBut
 		self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
 	end
 	
-	if eMouseButton == 1 then
+	if eMouseButton == 1 and unit then
 		Event_FireGenericEvent("GenericEvent_NewContextMenuPlayerDetailed", wndHandler, unit:GetName(), unit)
 	end
 end
