@@ -408,6 +408,7 @@ function BetterRaidFrames:OnDocumentReady()
 	
 	-- Sets the party frame location once windows are ready.
 	function BetterRaidFrames:OnWindowManagementReady()
+		self.settings.bUseGroups = true -- DEBUGGING: Remove when there is an actual setting for this.
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
 		if self.settings.strChannelName ~= nil then
 			self:JoinBRFChannel(self.settings.strChannelName)
