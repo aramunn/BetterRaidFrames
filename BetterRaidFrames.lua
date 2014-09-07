@@ -669,7 +669,12 @@ function BetterRaidFrames:SetDefaultGroup()
 	
 	local nMembers = GroupLib.GetMemberCount()
 	self.tMemberToGroup = {}
-	self.tNamedGroups = {["Raid"] = nMembers-1, [self.settings.strMyGroup] = 1}
+	self.tNamedGroups = {["Raid"] = nMembers-1}
+	if self.settings.strMyGroup == "Raid" then
+		self.tNamedGroups["Raid"] = self.tNamedGroups["Raid"] + 1
+	else
+		self.tNamedGroups[self.settings.strMyGroup] = 1
+	end
 
 	for idx = 1, nMembers do
 		local tMemberData = GroupLib.GetGroupMember(idx)
