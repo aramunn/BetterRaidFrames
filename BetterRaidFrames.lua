@@ -317,6 +317,8 @@ function BetterRaidFrames:OnLoad()
 	self.tMemberToGroup = {}
 	
 	self.settings = self.settings or {}
+	self.settings.strMyGroup = self.settings.strMyGroup or "Raid"
+	
 	setmetatable(self.settings, DefaultSettings)
 	
 	if Apollo.GetAddon("VikingContextMenuPlayer") ~= nil then
