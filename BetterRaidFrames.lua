@@ -691,14 +691,14 @@ end
 function BetterRaidFrames:AddPlayerToGroup(idx, strGroup)
 	if self.chanBrf == nil then return end
 	
-	self:CPrint("Adding player with idx " .. idx .. " to group " .. strGroup)
+	--self:CPrint("Adding player with idx " .. idx .. " to group " .. strGroup)
 	self.tMemberToGroup[idx] = strGroup
 	if self.tNamedGroups[strGroup] == nil then
-		self:CPrint("Group didn't exist before, creating.")
+		--self:CPrint("Group didn't exist before, creating.")
 		self.tNamedGroups[strGroup] = 1
 		return knDirtyGeneral
 	else
-		self:CPrint("Group already existed. Counter now at " .. self.tNamedGroups[strGroup])
+		--self:CPrint("Group already existed. Counter now at " .. self.tNamedGroups[strGroup])
 		self.tNamedGroups[strGroup] = self.tNamedGroups[strGroup] + 1
 		return knDirtyMembers
 	end
@@ -707,12 +707,12 @@ end
 function BetterRaidFrames:RemovePlayerFromGroup(idx, strGroup)
 	if self.chanBrf == nil then return end
 	
-	self:CPrint("Removing player with idx " .. idx .. " from group " .. strGroup)
+	--self:CPrint("Removing player with idx " .. idx .. " from group " .. strGroup)
 	self.tMemberToGroup[idx] = nil
 	if self.tNamedGroups[strGroup] ~= nil then
 		self.tNamedGroups[strGroup] = self.tNamedGroups[strGroup] - 1
 		if self.tNamedGroups[strGroup] <= 0 then
-			self:CPrint("Group " .. strGroup .. " no longer has any players. Removing.")
+			--self:CPrint("Group " .. strGroup .. " no longer has any players. Removing.")
 			self.tNamedGroups[strGroup] = nil
 			return knDirtyGeneral
 		end
@@ -724,15 +724,15 @@ end
 function BetterRaidFrames:SendBRFMessage(tMsg)
 	if self.chanBrf == nil then return end
 		
-	self:CPrint("Sending message.. Type:" .. tMsg.strMsgType .. " Char: " .. tMsg.strCharacterName)
+	--self:CPrint("Sending message.. Type:" .. tMsg.strMsgType .. " Char: " .. tMsg.strCharacterName)
 	self.chanBrf:SendMessage(tMsg)
 end
 
 function BetterRaidFrames:OnBRFMessage(channel, tMsg)
-	self:CPrint("Received message... Type:" .. tMsg.strMsgType .. " Char:" .. tMsg.strCharacterName)
+	--self:CPrint("Received message... Type:" .. tMsg.strMsgType .. " Char:" .. tMsg.strCharacterName)
 	-- Ignore when not in a raid, or invalid message type.
 	if not GroupLib.InRaid() or tMsg.strMsgType == nil then
-		self:CPrint("Not in a raid.") 
+		--self:CPrint("Not in a raid.") 
 		return 
 	end
 
@@ -742,11 +742,11 @@ function BetterRaidFrames:OnBRFMessage(channel, tMsg)
 	for idx = 1, nGroupMemberCount do
 		local tMemberData = GroupLib.GetGroupMember(idx)
 		if tMemberData.strCharacterName == tMsg.strCharacterName then
-			self:CPrint("Found matching character: " .. tMsg.strCharacterName)
+			--self:CPrint("Found matching character: " .. tMsg.strCharacterName)
 			return self:ParseBRFMessage(tMsg, idx, tMemberData)
 		end
 	end
-	self:CPrint("Found no matching character (" .. tMsg.strCharacterName .. ")")
+	Print("ERROR: Found no matching character (" .. tMsg.strCharacterName .. ")")
 end
 
 -- A BRFMessage is a table consisting of:
@@ -791,11 +791,11 @@ function BetterRaidFrames:ParseUpdate(tMsg, idx, tMemberData)
 	end
 
 	if tMsg.strGroupOld ~= nil then
-		self:CPrint("Removing from old group " .. tMsg.strGroupOld)
+		--self:CPrint("Removing from old group " .. tMsg.strGroupOld)
 		self:RemovePlayerFromGroup(idx, tMsg.strGroupOld)
 	end
 	
-	self:CPrint("Adding " .. idx .. " to group " .. tMsg.strGroup)
+	--self:CPrint("Adding " .. idx .. " to group " .. tMsg.strGroup)
 	self:AddPlayerToGroup(idx, tMsg.strGroup)
 	
 	-- In case leader changed my group.
@@ -1130,7 +1130,7 @@ function BetterRaidFrames:UpdateMemberFrame(tCategory, tCurrMemberList, strCateg
 	local nCodeIdx = tCurrMemberList[1] -- Since actual lua index can change
 	local tMemberData = tCurrMemberList[2]
 	if tMemberData and self:HelperVerifyMemberCategory(strCategory, tMemberData, nCodeIdx) then
-		self:CPrint("UpdateMemberFrame for: " .. tCurrMemberList[2].strCharacterName .. " into category: " .. strCategory)
+		--self:CPrint("UpdateMemberFrame for: " .. tCurrMemberList[2].strCharacterName .. " into category: " .. strCategory)
 		local tRaidMember = self:FactoryMemberWindow(wndRaidCategoryItems, nCodeIdx)
 		self:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberData, nGroupMemberCount, bFrameLocked)
 		self.arMemberIndexToWindow[nCodeIdx] = tRaidMember
