@@ -668,20 +668,21 @@ function BetterRaidFrames:SetDefaultGroup()
 	
 	local nMembers = GroupLib.GetMemberCount()
 	self.tMemberToGroup = {}
-	self.tNamedGroups = {["Raid"] = nMembers-1}
-	if self.settings.strMyGroup == "Raid" then
-		self.tNamedGroups["Raid"] = self.tNamedGroups["Raid"] + 1
-	else
-		self.tNamedGroups[self.settings.strMyGroup] = 1
-	end
+	self.tNamedGroups = {["Raid"] = nMembers}
+	
+	--if self.settings.strMyGroup == "Raid" then
+	--	self.tNamedGroups["Raid"] = self.tNamedGroups["Raid"] + 1
+	--else
+	--	self.tNamedGroups[self.settings.strMyGroup] = 1
+	--end
 
 	for idx = 1, nMembers do
 		local tMemberData = GroupLib.GetGroupMember(idx)
-		if tMemberData.strCharacterName == self.kstrMyName then
-			self.tMemberToGroup[idx] = self.settings.strMyGroup
-		else
-			self.tMemberToGroup[idx] = "Raid"
-		end
+		--if tMemberData.strCharacterName == self.kstrMyName then
+		--	self.tMemberToGroup[idx] = self.settings.strMyGroup
+		--else
+		self.tMemberToGroup[idx] = "Raid"
+		--end
 	end
 end
 		
@@ -784,7 +785,7 @@ function BetterRaidFrames:ParseUpdate(tMsg, idx, tMemberData)
 
 	-- Sort of a hack. If its a sync reply its an UPDATE with a target,
 	-- which means they've been put into 'Raid' by SetDefaultGroup(), which
-	-- they may not actually be in! So lets remove them from it
+	-- they may not actually be in! So lets remove them from it.
 	if tMsg.strTargetName and tMsg.strGroup ~= "Raid" then
 		tMsg.strGroupOld = "Raid"
 	end
@@ -2815,7 +2816,7 @@ function BetterRaidFrames:OnSetGroup(tokens)
 			return
 		end
 
-		local playerName = tokens[3]
+		local playerName = string.lower(tokens[3])
 		local nMembers = GroupLib.GetMemberCount()
 		for idx = 1, nMembers do
 			local tMemberData = GroupLib.GetGroupMember(idx)
@@ -2829,7 +2830,7 @@ function BetterRaidFrames:OnSetGroup(tokens)
 
 		for idx = 1, nMembers do
 			local tMemberData = GroupLib.GetGroupMember(idx)
-			if tMemberData.strCharacterName == playerName then
+			if string.lower(tMemberData.strCharacterName) == playerName then
 				local oldGroup = self.tMemberToGroup[idx]
 				return self:SendUpdate(tMemberData.strCharacterName, groupName, oldGroup)
 			end
