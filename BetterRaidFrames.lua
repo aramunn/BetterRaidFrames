@@ -418,6 +418,9 @@ function BetterRaidFrames:OnDocumentReady()
 		self:UpdateBarArtTimer()
 		self:UpdateBoostFoodTimer()
 		self:UpdateMainUpdateTimer()
+		if GroupLib.InRaid() and self.chanBrf ~= nil then
+			self:SendSync()
+		end
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -808,8 +811,7 @@ end
 
 function BetterRaidFrames:SendUpdate(strCharacterName, strGroup, strGroupOld)
 	if self.chanBrf == nil then return end
-	
-	self:CPrint("Creating message.")
+
 	local msg = {}
 	msg.strCharacterName = strCharacterName
 	msg.strGroup = strGroup
@@ -826,9 +828,6 @@ function BetterRaidFrames:OnCharacterCreated()
 	if self.settings.strChannelName ~= nil then
 		self:SetDefaultGroup()
 		self:JoinBRFChannel(self.settings.strChannelName)
-		if GroupLib.InRaid() then
-			self:SendSync()
-		end
 	end
 	self:BuildAllFrames()
 	self:ResizeAllFrames()
