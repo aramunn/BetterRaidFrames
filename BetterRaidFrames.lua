@@ -796,6 +796,12 @@ function BetterRaidFrames:ParseUpdate(tMsg, idx, tMemberData)
 	
 	self:CPrint("Adding " .. idx .. " to group " .. tMsg.strGroup)
 	self:AddPlayerToGroup(idx, tMsg.strGroup)
+	
+	-- In case leader changed my group.
+	if tMemberData.strCharacterName == self.kstrMyName then
+		self.settings.strMyGroup = tMsg.strGroup
+	end
+	
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral)
 end
 
@@ -2795,22 +2801,52 @@ function BetterRaidFrames:OnSetChannel(tokens)
 end
 
 -- Command: /brf group <name>
+-- Leader command: /brf group <name> <playername>
 function BetterRaidFrames:OnSetGroup(tokens)
 	local groupName = tokens[2]
 	if tokens[2] == nil then
 		self:CPrint("Join which group? Syntax: /brf group <name>")
 		return
 	end
-	if groupName == self.settings.strMyGroup then
-		self:CPrint("You are already in that group.")
-	end
 	
-	local oldGroup = self.settings.strMyGroup
-	self.settings.strMyGroup = groupName
-	self:CPrint("Your group is now set to: " .. groupName .. " (was " .. oldGroup .. ")")
-	if GroupLib.InRaid() then
-		self:CPrint("Updating...")
-		self:SendUpdate(self.kstrMyName, groupName, oldGroup)
+	if tokens[3] ~= nil then
+		if not GroupLib.InRaid() then
+			self:CPrint("You must be in a raid to set someone elses group!")
+			return
+		end
+
+		local playerName = tokens[3]
+		local nMembers = GroupLib.GetMemberCount()
+		for idx = 1, nMembers do
+			local tMemberData = GroupLib.GetGroupMember(idx)
+			if tMemberData.strCharacterName == self.kstrMyName then
+				if not tMemberData.bIsLeader and not tMemberData.bRaidAssistant then
+					self:CPrint("You cannot set someone elses group unless you are a raid leader / assistant!")
+					return
+				end
+			end
+		end
+
+		for idx = 1, nMembers do
+			local tMemberData = GroupLib.GetGroupMember(idx)
+			if tMemberData.strCharacterName == playerName then
+				local oldGroup = self.tMemberToGroup[idx]
+				return self:SendUpdate(tMemberData.strCharacterName, groupName, oldGroup)
+			end
+		end
+		self:CPrint("Unable to find player by the name of " .. playerName)
+	else
+		if groupName == self.settings.strMyGroup then
+			self:CPrint("You are already in that group.")
+		end
+		
+		local oldGroup = self.settings.strMyGroup
+		self.settings.strMyGroup = groupName
+		self:CPrint("Your group is now set to: " .. groupName .. " (was " .. oldGroup .. ")")
+		if GroupLib.InRaid() then
+			self:CPrint("Updating...")
+			self:SendUpdate(self.kstrMyName, groupName, oldGroup)
+		end
 	end
 end
 
