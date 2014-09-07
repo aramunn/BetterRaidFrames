@@ -2750,6 +2750,8 @@ function BetterRaidFrames:OnSlashCmd(sCmd, sInput)
 		self:CPrint("/brf options - Options Menu")
 		self:CPrint("/brf colors - Customize Bar Colors")
 		self:CPrint("/brf advanced - Advanced options, such as controlling timers")
+		self:CPrint("/brf group <name> - In group-view mode, join group <name>")
+		self:CPrint("/brf channel <name> - Use <name> to communicate with other BetterRaidFrames users in the raid")
 	elseif option == "options" then
 		self:OnConfigOn()
 	elseif option == "colors" then
@@ -2770,6 +2772,10 @@ end
 
 -- Command: /brf channel <name>
 function BetterRaidFrames:OnSetChannel(tokens)
+	if tokens[2] == nil then
+		self:CPrint("Join which channel? Syntax: /brf channel <name>")
+		return
+	end
 	local chanName = tokens[2]
 	self.settings.strChannelName = chanName
 	self:JoinBRFChannel(chanName)
@@ -2778,7 +2784,10 @@ end
 -- Command: /brf group <name>
 function BetterRaidFrames:OnSetGroup(tokens)
 	local groupName = tokens[2]
-	
+	if tokens[2] == nil then
+		self:CPrint("Join which group? Syntax: /brf group <name>")
+		return
+	end
 	if groupName == self.settings.strMyGroup then
 		self:CPrint("You are already in that group.")
 	end
