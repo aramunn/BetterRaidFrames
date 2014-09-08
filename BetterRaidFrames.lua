@@ -170,6 +170,7 @@ local DefaultSettings = {
 	bShowIcon_Boost		= false,
 	bShowFocus			= false,
 	bShowCategories		= true,
+	bUseGroups			= false,
 	bShowNames			= true,
 	bAutoLock_Combat	= true,
 	nNumColumns			= 1,
@@ -410,7 +411,6 @@ function BetterRaidFrames:OnDocumentReady()
 	
 	-- Sets the party frame location once windows are ready.
 	function BetterRaidFrames:OnWindowManagementReady()
-		self.settings.bUseGroups = true -- DEBUGGING: Remove when there is an actual setting for this.
 		Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "BetterRaidFrames" })
 		self:LockFrameHelper(self.settings.bLockFrame)
 		self:NumColumnsHelper()
@@ -445,6 +445,7 @@ function BetterRaidFrames:OnDocumentReady()
 	self.wndRaidCustomizeBoostIcons = wndRaidOptions:FindChild("RaidCustomizeBoostIcons")
 	self.wndRaidCustomizeManaBar = wndRaidOptions:FindChild("RaidCustomizeManaBar")
 	self.wndRaidCustomizeCategories = wndRaidOptions:FindChild("RaidCustomizeCategories")
+	self.wndRaidCustomizeGroups = wndRaidOptions:FindChild("RaidCustomizeGroupView")
 	self.wndRaidCustomizeClassIcons = wndRaidOptions:FindChild("RaidCustomizeClassIcons")
 	self.wndRaidCustomizeLockInCombat = wndRaidOptions:FindChild("RaidCustomizeLockInCombat")
 	self.wndRaidCustomizeNumColAdd = wndRaidOptions:FindChild("RaidCustomizeNumColAdd")
@@ -519,6 +520,8 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndRaidCustomizeManaBar:SetCheck(self.settings.bShowFocus) end
 	if self.settings.bShowCategories ~= nil then
 		self.wndRaidCustomizeCategories:SetCheck(self.settings.bShowCategories) end
+	if self.settings.bUseGroups ~= nil then
+		self.wndRaidCustomizeGroups:SetCheck(self.settings.bUseGroups) end
 	if self.settings.bShowNames ~= nil then
 		self.wndRaidCustomizeShowNames:SetCheck(self.settings.bShowNames) end
 	if self.settings.bAutoLock_Combat ~= nil then
@@ -2576,8 +2579,12 @@ function BetterRaidFrames:OnRaidCustomizeFocusBarCheck( wndHandler, wndControl, 
 end
 
 function BetterRaidFrames:OnRaidCustomizeCategoryCheck(wndHandler, wndControl, eMouseButton)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 	self.settings.bShowCategories = wndHandler:IsChecked()
+	if self.settings.bUseGroups then
+		self.settings.bUseGroups = false
+		self.wndRaidCustomizeGroups:SetCheck(false)
+	end
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
 function BetterRaidFrames:OnRaidCustomizeNamesCheck( wndHandler, wndControl, eMouseButton )
@@ -2599,6 +2606,15 @@ function BetterRaidFrames:OnRaidCustomizeBoostIconsCheck( wndHandler, wndControl
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 	self.settings.bShowIcon_Boost = wndHandler:IsChecked()
 	self:OnBoostFoodUpdateTimer()
+end
+
+function BetterRaidFrames:OnRaidCustomizeGroupCheck( wndHandler, wndControl, eMouseButton )
+	self.settings.bUseGroups = wndHandler:IsChecked()
+	if self.settings.bShowCategories then
+		self.settings.bShowCategories = false
+		self.wndRaidCustomizeCategories:SetCheck(false)
+	end
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
 ---------------------------------------------------------------------------------------------------
