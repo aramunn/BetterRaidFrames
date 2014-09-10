@@ -953,7 +953,7 @@ function BetterRaidFrames:UpdateAllMembers()
 		 	unitMember = GroupLib.GetUnitForGroupMember(idx)
 		end
 		
-		if not self.settings.bDisableFrames then
+		if not self.settings.bDisableFrames and tMemberData then
 			local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
 			local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
 			local bIsOnline = tMemberData.bIsOnline
