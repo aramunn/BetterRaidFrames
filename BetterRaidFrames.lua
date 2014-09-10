@@ -26,10 +26,28 @@ local kBoostBuffs = {
 	"Insight Boost",
 	"Moxie Boost",
 	"Tech Boost",
+	-- French
+	"Boost de Brutalité",
+	"Boost de Finesse",
+	"Boost de Vitalité",
+	"Boost d'Acuité",
+	"Boost de Mojo",
+	"Boost technique", -- Seems to be the correct name, weird that it seems to follow a different naming convention than the others
+	-- German
+	"Brutalitätsboost",
+	"Finesse-Boost",
+	"Zähigkeitsboost",
+	"Wahrnehmungsboost",
+	"Mumm-Boost",
+	"Tech-Boost",
 }
 
 local kFoodBuffs = {
 	"Stuffed!",
+	-- French
+	"Gavé !",
+	-- German
+	"Gesättigt!",
 }
 
 local ktClassIdToClassName =
