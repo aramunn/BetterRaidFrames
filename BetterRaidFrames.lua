@@ -966,9 +966,10 @@ function BetterRaidFrames:UpdateAllMembers()
 				-- Update Text Overlays
 				-- We're appending on the raid member name which is the default text overlay
 				self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
-				self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
-				self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
 			end
+			-- Has to be done also when out of range/dead/offline to ensure it is not stuck at the old value.
+			self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
+			self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
 		end	
 		
 		-- Update opacity if out of range
@@ -1247,9 +1248,10 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 		-- Update Text Overlays
 		-- We're appending on the raid member name which is the default text overlay
 		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
-		self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
-		self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
 	end
+	-- Has to be done also when out of range/dead/offline to ensure it is not stuck at the old value.
+	self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
+	self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
 	
 	-- Update opacity if out of range
 	self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
