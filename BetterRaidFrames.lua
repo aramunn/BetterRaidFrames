@@ -429,6 +429,7 @@ function BetterRaidFrames:OnDocumentReady()
 		self:UpdateBarArtTimer()
 		self:UpdateBoostFoodTimer()
 		self:UpdateMainUpdateTimer()
+		self:InterruptTracker()
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -679,7 +680,9 @@ function BetterRaidFrames:OnRaidFrameBaseTimer()
 		if bit32.btest(self.nDirtyFlag, knDirtyGeneral) and not self.settings.bDisableFrames then -- Rebuild everything
 			self:BuildAllFrames()
 			self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
-		elseif bit32.btest(self.nDirtyFlag, knDirtyMembers) then -- Fully update all members
+		end
+		
+		if bit32.btest(self.nDirtyFlag, knDirtyMembers) then -- Fully update all members
 			for idx, tRaidMember in pairs(self.arMemberIndexToWindow) do
 				self:UpdateSpecificMember(tRaidMember, idx, GroupLib.GetGroupMember(idx), self.nPrevMemberCount, bFrameLocked)
 			end
@@ -905,7 +908,7 @@ function BetterRaidFrames:BuildAllFrames()
 		self.wndMain:SetSprite("sprRaid_BaseNoArrow")
 	elseif not self.settings.bLockFrame then
 		self.wndMain:SetSprite("sprRaid_Base")
-	end	
+	end
 end
 
 function BetterRaidFrames:UpdateLootRules()
@@ -968,8 +971,8 @@ function BetterRaidFrames:UpdateAllMembers()
 				self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
 			end
 			-- Has to be done also when out of range/dead/offline to ensure it is not stuck at the old value.
-			self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
-			self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
+			self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange, bIsOnline)
+			self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange, bIsOnline)
 		end	
 		
 		-- Update opacity if out of range
@@ -1239,22 +1242,6 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 	self:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 	
 	local bIsOnline = tMemberData.bIsOnline
-	if not bOutOfRange and not bDead and bIsOnline then
-		-- Change the HP Bar Color if required for debuff tracking
-		local DebuffColorRequired = self:TrackDebuffsHelper(unitMember, tRaidMember)
-		-- Update Bar Colors
-		self:UpdateBarColors(tRaidMember, tMemberData, DebuffColorRequired)
-		
-		-- Update Text Overlays
-		-- We're appending on the raid member name which is the default text overlay
-		self:UpdateHPText(tMemberData.nHealth, tMemberData.nHealthMax, tRaidMember, tMemberData.strCharacterName)
-	end
-	-- Has to be done also when out of range/dead/offline to ensure it is not stuck at the old value.
-	self:UpdateShieldText(tMemberData.nShield, tMemberData.nShieldMax, tRaidMember, bOutOfRange)
-	self:UpdateAbsorbText(tMemberData.nAbsorption, tRaidMember, bOutOfRange)
-	
-	-- Update opacity if out of range
-	self:CheckRangeHelper(tRaidMember, unitMember, tMemberData)
 	
 	bShowClassIcon = self.settings.bShowIcon_Class
 	wndClassIcon = tRaidMember.wndRaidMemberClassIcon
@@ -2038,7 +2025,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	end
 end
 
-function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember, bOutOfRange)
+function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember, bOutOfRange, bIsOnline)
 	-- Only update text if we are showing the shield bar
 	if not self.settings.bShowShieldBar then
 		return
@@ -2052,7 +2039,7 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember,
 		return
 	end
 	
-	if bOutOfRange then
+	if bOutOfRange or not bIsOnline then
 		wnd:SetText(nil)
 		return
 	end
@@ -2083,7 +2070,7 @@ function BetterRaidFrames:UpdateShieldText(nShieldCurr, nShieldMax, tRaidMember,
 	end
 end
 
-function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange)
+function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange, bIsOnline)
 	-- Only update text if we are showing the shield bar
 	if not self.settings.bShowAbsorbBar then
 		return
@@ -2096,7 +2083,7 @@ function BetterRaidFrames:UpdateAbsorbText(nAbsorbCurr, tRaidMember, bOutOfRange
 		return
 	end
 	
-	if bOutOfRange then
+	if bOutOfRange or not bIsOnline then
 		wnd:SetText(nil)
 		return
 	end
@@ -2330,6 +2317,20 @@ function BetterRaidFrames:FactoryCategoryWindow(wndParent, strKey)
 	end
 
 	return tbl
+end
+
+function BetterRaidFrames:InterruptTracker()
+	local InterruptNotifyLib = Apollo.GetAddon("InterruptNotifyLib")
+	InterruptNotifyLib:AddChannel("kamiTest", self, "InterruptHandler")
+end
+
+function BetterRaidFrames:InterruptHandler(tMsg)
+	--local Rover = Apollo.GetAddon("Rover")
+	--Rover:AddWatch("Callback", tMsg, 0)
+	--[[local tAbilities = tMsg.tAbilities
+	for key, value in pairs(tAbilities) do
+		Print(key.."Cooldown remaining: "..value["nCooldownRemaining"])
+	end--]]
 end
 
 ---------------------------------------------------------------------------------------------------
