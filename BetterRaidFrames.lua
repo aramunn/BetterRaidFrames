@@ -429,7 +429,6 @@ function BetterRaidFrames:OnDocumentReady()
 		self:UpdateBarArtTimer()
 		self:UpdateBoostFoodTimer()
 		self:UpdateMainUpdateTimer()
-		self:InterruptTracker()
 	end
 
 	self.wndMain = Apollo.LoadForm(self.xmlDoc, "BetterRaidFramesForm", "FixedHudStratum", self)
@@ -2317,20 +2316,6 @@ function BetterRaidFrames:FactoryCategoryWindow(wndParent, strKey)
 	end
 
 	return tbl
-end
-
-function BetterRaidFrames:InterruptTracker()
-	local InterruptNotifyLib = Apollo.GetAddon("InterruptNotifyLib")
-	InterruptNotifyLib:AddChannel("kamiTest", self, "InterruptHandler")
-end
-
-function BetterRaidFrames:InterruptHandler(tMsg)
-	--local Rover = Apollo.GetAddon("Rover")
-	--Rover:AddWatch("Callback", tMsg, 0)
-	--[[local tAbilities = tMsg.tAbilities
-	for key, value in pairs(tAbilities) do
-		Print(key.."Cooldown remaining: "..value["nCooldownRemaining"])
-	end--]]
 end
 
 ---------------------------------------------------------------------------------------------------
