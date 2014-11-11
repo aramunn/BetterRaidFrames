@@ -7,4 +7,5 @@
 	<Script Name="Libs/GeminiColor/GeminiColor.lua"/>
     <Form Name="Libs/GeminiColor/GeminiColor.xml"/>
     <ReplaceAddon Name="RaidFrameBase"/>
+	<ReplaceAddon Name="RaidFrameReady"/>
 </Addon>
