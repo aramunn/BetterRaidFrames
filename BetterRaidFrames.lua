@@ -896,13 +896,6 @@ function BetterRaidFrames:BuildAllFrames()
 			wndRaidCategoryName:SetText(" " .. strCurrCategory)
 		end
 
-		-- Sorting if needed
-		-- Partially done: Issue doing it here: UpdateMemberFrame creates self.arMemberIndexToWindow by nCodeIdx which breaks the order again (and resets it to by idx)
-		if self.settings.bOrderAlphabetically then
-			local sort_func = function(a, b) return a[2].strCharacterName < b[2].strCharacterName end 
-			table.sort( tMemberList, sort_func )
-		end
-
 		if wndRaidCategoryBtn:IsEnabled() and not wndRaidCategoryBtn:IsChecked() then
 			for idx, tCurrMemberList in pairs(tMemberList) do
 				self:UpdateMemberFrame(tCategory, tCurrMemberList, strCurrCategory)
@@ -1042,6 +1035,11 @@ local kfnSortCategoryMembers = function(a, b)
 	return a:GetData().nCodeIdx  < b:GetData().nCodeIdx
 end
 
+local kfnSortAlphabeticalMembers = function (a, b)
+	return GroupLib.GetGroupMember(a:GetData()["nCodeIdx"]).strCharacterName < GroupLib.GetGroupMember(b:GetData()["nCodeIdx"]).strCharacterName
+end
+
+
 function BetterRaidFrames:UpdateOffsets()
 	self.nRaidMemberWidth = (self.wndMain:GetWidth() - 22) / self.settings.nNumColumns
 
@@ -1068,7 +1066,11 @@ function BetterRaidFrames:ResizeAllFrames()
 			self:ResizeMemberFrame(wndRaidMember)
 		end
 
-		wndRaidCategoryItems:ArrangeChildrenTiles(0, kfnSortCategoryMembers)
+		if self.settings.bOrderAlphabetically then
+			wndRaidCategoryItems:ArrangeChildrenTiles(0, kfnSortAlphabeticalMembers)
+		else
+			wndRaidCategoryItems:ArrangeChildrenTiles(0, kfnSortCategoryMembers)
+		end
 		nLeft, nTop, nRight, nBottom = wndCategory:GetAnchorOffsets()
 		local nChildrenHeight = 0
 		if wndRaidCategoryItems:IsShown() then
