@@ -166,6 +166,7 @@ local ktRowSizeIndexToPixels =
 
 local ktGeneralCategories = {Apollo.GetString("RaidFrame_Members")}
 local ktRoleCategoriesToUse = {Apollo.GetString("RaidFrame_Tanks"), Apollo.GetString("RaidFrame_Healers"), Apollo.GetString("RaidFrame_DPS")}
+local ktClassCategoriesToUse = {Apollo.GetString("ClassEngineer"), Apollo.GetString("ClassESPER"), Apollo.GetString("ClassMedic"), Apollo.GetString("ClassSpellslinger"), Apollo.GetString("ClassStalker"), Apollo.GetString("ClassWarrior")}
 
 local knReadyCheckTimeout = 60 -- in seconds
 
@@ -187,7 +188,6 @@ local DefaultSettings = {
 	bShowIcon_Food		= false,
 	bShowIcon_Boost		= false,
 	bShowFocus			= false,
-	bShowCategories		= true,
 	bShowNames			= true,
 	bAutoLock_Combat	= true,
 	nNumColumns			= 1,
@@ -213,6 +213,9 @@ local DefaultSettings = {
 	fMaxRange = 50,
 	bDisableFrames = false,
 	bConsistentIconOffset = false,
+	bShowRaidByRole = true,
+	bShowRaidByClass = false,
+	bOrderAlphabetically = true,
 	
 	-- Custom settings via /brf colors
 	bClassSpecificBarColors = false,
@@ -479,7 +482,6 @@ function BetterRaidFrames:OnDocumentReady()
 		self.wndReadyCheckPopup 	= nil
 	end
 
-	self.bSwapToTwoColsOnce 		= false
 	self.bTimerRunning 				= false
 	self.nPrevMemberCount			= 0
 
@@ -509,6 +511,15 @@ function BetterRaidFrames:copyTable(from, to)
     return to
 end
 
+function BetterRaidFrames:in_array(array, item)
+	for key,v in pairs(array) do
+		if v == item then
+			return true
+		end 
+	end
+	return false
+end
+
 function BetterRaidFrames:RefreshSettings()
 	-- Settings related to the default customize options
 	if self.settings.bShowIcon_Leader ~= nil then
@@ -525,8 +536,6 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndRaidCustomizeBoostIcons:SetCheck(self.settings.bShowIcon_Boost) end
 	if self.settings.bShowFocus ~= nil then
 		self.wndRaidCustomizeManaBar:SetCheck(self.settings.bShowFocus) end
-	if self.settings.bShowCategories ~= nil then
-		self.wndRaidCustomizeCategories:SetCheck(self.settings.bShowCategories) end
 	if self.settings.bShowNames ~= nil then
 		self.wndRaidCustomizeShowNames:SetCheck(self.settings.bShowNames) end
 	if self.settings.bAutoLock_Combat ~= nil then
@@ -567,6 +576,12 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfig:FindChild("Button_DisableFrames"):SetCheck(self.settings.bDisableFrames) end
 	if self.settings.bConsistentIconOffset ~= nil then
 		self.wndConfig:FindChild("Button_ConsistentIconOffset"):SetCheck(self.settings.bConsistentIconOffset) end
+	if self.settings.bShowRaidByRole ~= nil then
+		self.wndConfig:FindChild("Button_ShowRaidByRole"):SetCheck(self.settings.bShowRaidByRole) end
+	if self.settings.bShowRaidByClass ~= nil then
+		self.wndConfig:FindChild("Button_ShowRaidByClass"):SetCheck(self.settings.bShowRaidByClass) end
+	if self.settings.bOrderAlphabetically ~= nil then
+		self.wndConfig:FindChild("Button_OrderAlphabetically"):SetCheck(self.settings.bOrderAlphabetically) end
 
 	-- Settings related to /brf colors settings frame
 	if self.settings.bClassSpecificBarColors ~= nil then
@@ -834,9 +849,6 @@ function BetterRaidFrames:BuildAllFrames()
 	if nGroupMemberCount == 0 then
 		self:OnLeaveBtn()
 		return
-	elseif not self.bSwapToTwoColsOnce and nGroupMemberCount > 20 then
-		self.bSwapToTwoColsOnce = true
-		--self:OnRaidCustomizeNumColAdd(self.wndRaidCustomizeNumColAdd, self.wndRaidCustomizeNumColAdd) -- TODO HACK
 	end
 
 	if nGroupMemberCount ~= self.nPrevMemberCount then
@@ -854,8 +866,10 @@ function BetterRaidFrames:BuildAllFrames()
 	end
 
 	local tCategoriesToUse = ktGeneralCategories
-	if self.settings.bShowCategories then
+	if self.settings.bShowRaidByRole then
 		tCategoriesToUse = ktRoleCategoriesToUse
+	elseif self.settings.bShowRaidByClass then
+		tCategoriesToUse = ktClassCategoriesToUse
 	end
 
 	local nInvalidOrDeadMembers = 0
@@ -880,6 +894,13 @@ function BetterRaidFrames:BuildAllFrames()
 		wndRaidCategoryBtn:Show(not bFrameLocked)
 		if wndRaidCategoryName:GetText() == "" then
 			wndRaidCategoryName:SetText(" " .. strCurrCategory)
+		end
+
+		-- Sorting if needed
+		-- Partially done: Issue doing it here: UpdateMemberFrame creates self.arMemberIndexToWindow by nCodeIdx which breaks the order again (and resets it to by idx)
+		if self.settings.bOrderAlphabetically then
+			local sort_func = function(a, b) return a[2].strCharacterName < b[2].strCharacterName end 
+			table.sort( tMemberList, sort_func )
 		end
 
 		if wndRaidCategoryBtn:IsEnabled() and not wndRaidCategoryBtn:IsChecked() then
@@ -1726,7 +1747,7 @@ function BetterRaidFrames:OnRaidLockFrameBtnToggle(wndHandler, wndControl) -- Ra
 	self:BuildAllFrames()
 end
 
-function BetterRaidFrames:OnRaidCustomizeNumColAdd(wndHandler, wndControl) -- RaidCustomizeNumColAdd, and once from bSwapToTwoColsOnce
+function BetterRaidFrames:OnRaidCustomizeNumColAdd(wndHandler, wndControl) -- RaidCustomizeNumColAdd
 	self.settings.nNumColumns = self.settings.nNumColumns + 1
 	self:NumColumnsHelper()
 end
@@ -1760,8 +1781,10 @@ end
 
 function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 	local tCategoriesToUse = {Apollo.GetString("RaidFrame_Members")}
-	if self.settings.bShowCategories then
+	if self.settings.bShowRaidByRole then
 		tCategoriesToUse = {Apollo.GetString("RaidFrame_Tanks"), Apollo.GetString("RaidFrame_Healers"), Apollo.GetString("RaidFrame_DPS")}
+	elseif self.settings.bShowRaidByClass then
+		tCategoriesToUse = ktClassCategoriesToUse
 	end
 
 	for key, strCurrCategory in pairs(tCategoriesToUse) do
@@ -1868,6 +1891,8 @@ function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberDat
 		bResult = tMemberData.bHealer
 	elseif strCurrCategory == Apollo.GetString("RaidFrame_DPS") then
 		bResult = not tMemberData.bTank and not tMemberData.bHealer
+	elseif self:in_array(ktClassCategoriesToUse, strCurrCategory) then
+		bResult = strCurrCategory == tMemberData.strClassName
 	end
 	return bResult
 end
@@ -2349,11 +2374,6 @@ function BetterRaidFrames:OnRaidCustomizeFocusBarCheck( wndHandler, wndControl, 
 	self.settings.bShowFocus = wndHandler:IsChecked()
 end
 
-function BetterRaidFrames:OnRaidCustomizeCategoryCheck(wndHandler, wndControl, eMouseButton)
-	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
-	self.settings.bShowCategories = wndHandler:IsChecked()
-end
-
 function BetterRaidFrames:OnRaidCustomizeNamesCheck( wndHandler, wndControl, eMouseButton )
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 	self.settings.bShowNames = wndHandler:IsChecked()
@@ -2518,6 +2538,29 @@ end
 function BetterRaidFrames:Button_ConsistentIconOffset( wndHandler, wndControl, eMouseButton )
 	self.settings.bConsistentIconOffset = wndHandler:IsChecked()
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
+end
+
+function BetterRaidFrames:Button_ShowRaidByRole(wndHandler, wndControl, eMouseButton)
+	-- We cannot have category/role ordering and class ordering at the same time.
+	self.wndConfig:FindChild("Button_ShowRaidByClass"):SetCheck(self.settings.bShowRaidByClass and not wndHandler:IsChecked())
+	self.settings.bShowRaidByClass = self.settings.bShowRaidByClass and not wndHandler:IsChecked()
+
+	self.settings.bShowRaidByRole = wndHandler:IsChecked()
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
+end
+
+function BetterRaidFrames:Button_ShowRaidByClass(wndHandler, wndControl, eMouseButton)
+	-- We cannot have category/role ordering and class ordering at the same time.
+	self.wndConfig:FindChild("Button_ShowRaidByRole"):SetCheck(self.settings.bShowRaidByRole and not wndHandler:IsChecked())
+	self.settings.bShowRaidByRole = self.settings.bShowRaidByRole and not wndHandler:IsChecked()
+
+	self.settings.bShowRaidByClass = wndHandler:IsChecked()
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
+end
+
+function BetterRaidFrames:Button_OrderAlphabetically(wndHandler, wndControl, eMouseButton)
+	self.settings.bOrderAlphabetically = wndHandler:IsChecked()
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
 function BetterRaidFrames:CPrint(str)
