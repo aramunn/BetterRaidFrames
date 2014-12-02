@@ -1836,8 +1836,8 @@ function BetterRaidFrames:LockFrameHelper(bLock)
 end
 
 function BetterRaidFrames:NumColumnsHelper()
-	if self.settings.nNumColumns >= 5 then
-		self.settings.nNumColumns = 5
+	if self.settings.nNumColumns >= 10 then
+		self.settings.nNumColumns = 10
 		self.wndRaidCustomizeNumColAdd:Enable(false)
 	else
 		self.wndRaidCustomizeNumColAdd:Enable(true)
@@ -1853,6 +1853,8 @@ function BetterRaidFrames:NumColumnsHelper()
 	self.wndRaidCustomizeNumColValue:SetText(self.settings.nNumColumns)
 	
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+	self:ResizeAllFrames()
+	self:OnRaidFrameBaseTimer()
 end
 
 function BetterRaidFrames:NumRowsHelper()
@@ -1873,6 +1875,8 @@ function BetterRaidFrames:NumRowsHelper()
 	self.wndRaidCustomizeRowSizeValue:SetText(self.settings.nRowSize)
 	
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+	self:ResizeAllFrames()
+	self:OnRaidFrameBaseTimer()
 end
 
 function BetterRaidFrames:OnEnteredCombat(unit, bInCombat)
