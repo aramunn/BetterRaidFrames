@@ -259,9 +259,10 @@ local DefaultSettings = {
 	fBarArtTimer = 0.2,
 	fBoostFoodTimer = 1,
 	fMainUpdateTimer = 0.2,
-}
 
-DefaultSettings.__index = DefaultSettings	
+	-- /brf rename
+	tRenameCharacters = {},
+}
 
 function BetterRaidFrames:new(o)
     o = o or {}
@@ -290,7 +291,7 @@ function BetterRaidFrames:OnSave(eType)
 		nSaveVersion 			= knSaveVersion,
 	}
 	
-	self:copyTable(self.settings, tSave)
+	self:recursiveCopyTable(self.settings, tSave)
 
 	return tSave
 end
@@ -301,7 +302,8 @@ function BetterRaidFrames:OnRestore(eType, tSavedData)
 		return
 	end
 
-	self.settings = self:copyTable(tSavedData, self.settings)
+	self.settings = self:recursiveCopyTable(DefaultSettings, self.settings)
+	self.settings = self:recursiveCopyTable(tSavedData, self.settings)
 end
 
 function BetterRaidFrames:OnLoad()
@@ -333,8 +335,7 @@ function BetterRaidFrames:OnLoad()
 	-- Register handler for slash commands that open the configuration form
 	Apollo.RegisterSlashCommand("brf", "OnSlashCmd", self)
 	
-	self.settings = self.settings or {}
-	setmetatable(self.settings, DefaultSettings)
+	self.settings = self.settings or self:recursiveCopyTable(DefaultSettings)
 	
 	if Apollo.GetAddon("VikingContextMenuPlayer") ~= nil then
 	    self.contextMenuPlayer = Apollo.GetAddon("VikingContextMenuPlayer")
@@ -502,13 +503,16 @@ function BetterRaidFrames:OnDocumentReady()
 	self:RefreshSettings()
 end
 
-function BetterRaidFrames:copyTable(from, to)
-	if not from then return end
-    to = to or {}
+function BetterRaidFrames:recursiveCopyTable(from, to)
+	to = to or {}
 	for k,v in pairs(from) do
-		to[k] = v
+		if type(v) == "table" then
+			to[k] = self:recursiveCopyTable(v, to[k])
+		else
+			to[k] = v
+		end
 	end
-    return to
+	return to
 end
 
 function BetterRaidFrames:in_array(array, item)
@@ -1035,9 +1039,11 @@ local kfnSortCategoryMembers = function(a, b)
 	return a:GetData().nCodeIdx  < b:GetData().nCodeIdx
 end
 
-local kfnSortAlphabeticalMembers = function (a, b)
-	return GroupLib.GetGroupMember(a:GetData()["nCodeIdx"]).strCharacterName < GroupLib.GetGroupMember(b:GetData()["nCodeIdx"]).strCharacterName
+local kfnSortAlphabeticalMembers = function(a, b)
+	local BRF = Apollo.GetAddon("BetterRaidFrames")
+	return BRF:CharacterNameToDisplayName(GroupLib.GetGroupMember(a:GetData()["nCodeIdx"]).strCharacterName) < BRF:CharacterNameToDisplayName(GroupLib.GetGroupMember(b:GetData()["nCodeIdx"]).strCharacterName)
 end
+
 
 
 function BetterRaidFrames:UpdateOffsets()
@@ -1151,6 +1157,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 
 	local bOutOfRange = tMemberData.nHealthMax == 0 or not unitMember
 	local bDead = tMemberData.nHealth == 0 and tMemberData.nHealthMax ~= 0
+	local strDisplayName = self:CharacterNameToDisplayName(tMemberData.strCharacterName)
 	
 	if not tMemberData.bIsOnline then
 		wndMemberBtn:Enable(false)
@@ -1164,7 +1171,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndCurrAbsorbBar:SetFullSprite("")
 
 		if self.settings.bShowNames then
-			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), tMemberData.strCharacterName))
+			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_OfflineMember"), strDisplayName))
 		else
 			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
@@ -1175,7 +1182,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndHealthBar:SetSprite("")
 
 		if self.settings.bShowNames then
-			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), tMemberData.strCharacterName))
+			tRaidMember.wndCurrHealthBar:SetText(String_GetWeaselString(Apollo.GetString("Group_DeadMember"), strDisplayName))
 		else
 			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
@@ -1191,7 +1198,7 @@ function BetterRaidFrames:UpdateBarArt(tMemberData, tRaidMember, unitMember)
 		tRaidMember.wndCurrAbsorbBar:SetFullSprite("")
 		
 		if self.settings.bShowNames then
-			tRaidMember.wndCurrHealthBar:SetText("  "..tMemberData.strCharacterName.." (OoR)")
+			tRaidMember.wndCurrHealthBar:SetText("  "..strDisplayName.." (OoR)")
 		else
 			tRaidMember.wndCurrHealthBar:SetText(nil)
 		end
@@ -1977,11 +1984,12 @@ end
 
 function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, strCharacterName)
 	local wnd = tRaidMember.wndCurrHealthBar
+	local strDisplayName = self:CharacterNameToDisplayName(strCharacterName)
 	-- No text needs to be drawn if all HP Text options are disabled
 	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		-- Update text to be empty, otherwise it will be stuck at the old value
 		if self.settings.bShowNames then
-			wnd:SetText(" "..strCharacterName)
+			wnd:SetText(" "..strDisplayName)
 		else
 			wnd:SetText(nil)
 		end
@@ -2007,7 +2015,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_Full selected
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(" "..strCharacterName.." - "..nHealthCurr.."/"..nHealthMax)
+			wnd:SetText(" "..strDisplayName.." - "..nHealthCurr.."/"..nHealthMax)
 		else
 			wnd:SetText(" "..nHealthCurr.."/"..nHealthMax)
 		end
@@ -2017,7 +2025,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- ShowHP_Full + Pct
 	if self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(" "..strCharacterName.." - "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
+			wnd:SetText(" "..strDisplayName.." - "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
 		else
 			wnd:SetText(" "..nHealthCurr.."/"..nHealthMax.." ("..strHealthPercentage..")")
 		end
@@ -2027,7 +2035,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only ShowHP_K selected
 	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and not self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(" "..strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded)
+			wnd:SetText(" "..strDisplayName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded)
 		else
 			wnd:SetText(" "..strHealthCurrRounded.."/"..strHealthMaxRounded)
 		end
@@ -2037,7 +2045,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- ShowHP_K + Pct
 	if not self.settings.bShowHP_Full and self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(" "..strCharacterName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
+			wnd:SetText(" "..strDisplayName.." - "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
 		else
 			wnd:SetText(" "..strHealthCurrRounded.."/"..strHealthMaxRounded.." ("..strHealthPercentage..")")
 		end
@@ -2047,7 +2055,7 @@ function BetterRaidFrames:UpdateHPText(nHealthCurr, nHealthMax, tRaidMember, str
 	-- Only Pct selected
 	if not self.settings.bShowHP_Full and not self.settings.bShowHP_K and self.settings.bShowHP_Pct then
 		if self.settings.bShowNames then
-			wnd:SetText(" "..strCharacterName.." - "..strHealthPercentage)
+			wnd:SetText(" "..strDisplayName.." - "..strHealthPercentage)
 		else
 			wnd:SetText(" "..strHealthPercentage)
 		end
@@ -2263,7 +2271,7 @@ function BetterRaidFrames:CharacterToIdx(strCharacterName)
 	for idx = 1, nGroupMemberCount do
 		local unitPlayer = GroupLib.GetGroupMember(idx)
 		if unitPlayer ~= nil then
-			if strCharacterName == unitPlayer.strCharacterName then
+			if string.lower(strCharacterName) == string.lower(unitPlayer.strCharacterName) then
 				return idx
 			end
 		end
@@ -2569,6 +2577,30 @@ function BetterRaidFrames:Button_OrderAlphabetically(wndHandler, wndControl, eMo
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
+function BetterRaidFrames:CharacterNameToDisplayName(strCharacterName)
+	local strCharacterNameLower = string.lower(strCharacterName)
+	-- returns character name to use in raid frames, in case people renamed it.
+	return self.settings.tRenameCharacters[strCharacterNameLower] or strCharacterName
+end
+
+function BetterRaidFrames:RenameCharacter(args)
+	-- [1] is rename, we need at least first + last name + new name, so [4] must exist, otherwise invalid.
+	if not args[4] then
+		self:CPrint("Error: Invalid rename parameters.")
+		self:CPrint("You need to use /brf rename <character_name> <new name> - for example: /brf rename Kami Nuvini The New Kami to rename \"Kami Nuvini\" to \"The New Kami\"")
+		return false
+	end
+	-- Check if valid character name by checking if char is in raid
+	local strOrig_Character_Name = string.lower(args[2]) .. " " .. string.lower(args[3])
+	if not GroupLib.InRaid() or not self:CharacterToIdx(strOrig_Character_Name) then
+		self:CPrint("Error: Unable to find that character in the current raid.")
+		return false
+	end
+	local strNew_Character_Name = table.concat(args, " ", 4)
+	self.settings.tRenameCharacters[strOrig_Character_Name] = strNew_Character_Name
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyResize)
+end
+
 function BetterRaidFrames:CPrint(str)
 	ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Command, str, "")
 end
@@ -2580,12 +2612,19 @@ function BetterRaidFrames:OnSlashCmd(sCmd, sInput)
 		self:CPrint("/brf options - Options Menu")
 		self:CPrint("/brf colors - Customize Bar Colors")
 		self:CPrint("/brf advanced - Advanced options, such as controlling timers")
+		self:CPrint("/brf rename <orig_name> <new_name> - Rename characters in the raid frame. i.e. /brf rename Kami Nuvini Kami")
 	elseif option == "options" then
 		self:OnConfigOn()
 	elseif option == "colors" then
 		self:OnConfigColorsOn()
 	elseif option == "advanced" then
 		self:OnConfigAdvancedOn()
+	else
+		args = {}
+		for word in sInput:gmatch("%S+") do table.insert(args, word) end
+		if args[1] and args[1] == "rename" then
+			self:RenameCharacter(args)
+		end
 	end
 end
 
