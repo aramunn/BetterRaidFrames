@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <Addon Author="KamiNuvini" APIVersion="9" Name="BetterRaidFrames" Description="This addon aims to provide better raid frames by improving the way health, shields and absorbs are displayed.
 
-" Version="0.31">
+" Version="0.32">
     <Form Name="BetterRaidFrames.xml"/>
     <Script Name="BetterRaidFrames.lua"/>
 	<Script Name="Libs/GeminiColor/GeminiColor.lua"/>
