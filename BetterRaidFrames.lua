@@ -1959,26 +1959,44 @@ function BetterRaidFrames:ResizeBars(tRaidMember, bDead)
 	local wndMaxAbsorb = tRaidMember.wndMaxAbsorbBar
 	local wndMaxShield = tRaidMember.wndMaxShieldBar
 	local nLeft, nTop, nRight, nBottom = wndHealthBar:GetAnchorOffsets()
+	local nAbsorbLeft, nAbsorbTop, nAbsorbRight, nAbsorbBottom = wndMaxAbsorb:GetAnchorOffsets()
+	local nShieldLeft, nShieldTop, nShieldRight, nShieldBottom = wndMaxShield:GetAnchorOffsets()
 	
 	-- Define offsets based on settings of which bars to show
 	if self.settings.bShowShieldBar and self.settings.bShowAbsorbBar then
-		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.67, nBottom)
-		wndMaxShield:SetAnchorOffsets(nWidth * 0.67, nTop, nWidth * 0.85, nBottom)
-		wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.85, nTop, nWidth, nBottom)
+		if math.floor(nWidth * 0.67) ~=  nRight then
+			wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.67, nBottom)
+		end
+		if math.floor(nWidth * 0.67) ~= nShieldLeft or math.floor(nWidth * 0.85) ~= nShieldRight then
+			wndMaxShield:SetAnchorOffsets(nWidth * 0.67, nTop, nWidth * 0.85, nBottom)
+		end
+		if math.floor(nWidth * 0.85) ~= nAbsorbLeft then
+			wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.85, nTop, nWidth, nBottom)
+		end
 	end
 	
 	if self.settings.bShowShieldBar and not self.settings.bShowAbsorbBar then
-		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.75, nBottom)
-		wndMaxShield:SetAnchorOffsets(nWidth * 0.75, nTop, nWidth, nBottom)
+		if math.floor(nWidth * 0.75) ~= nRight then
+			wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.75, nBottom)
+		end
+		if math.floor(nWidth * 0.75) ~= nShieldLeft then
+			wndMaxShield:SetAnchorOffsets(nWidth * 0.75, nTop, nWidth, nBottom)
+		end
 	end
 	
 	if not self.settings.bShowShieldBar and self.settings.bShowAbsorbBar then
-		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.8, nBottom)
-		wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.8, nTop, nWidth, nBottom)
+		if math.floor(nWidth * 0.8) ~= nRight then
+			wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth * 0.8, nBottom)
+		end
+		if math.floor(nWidth * 0.8) ~= nAbsorbLeft then
+			wndMaxAbsorb:SetAnchorOffsets(nWidth * 0.8, nTop, nWidth, nBottom)
+		end
 	end
 	
 	if not self.settings.bShowShieldBar and not self.settings.bShowAbsorbBar then
-		wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth, nBottom)
+		if math.floor(nWidth) ~= nRight then
+			wndHealthBar:SetAnchorOffsets(nLeft, nTop, nWidth, nBottom)
+		end
 	end
 end
 
