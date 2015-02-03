@@ -1517,6 +1517,7 @@ function BetterRaidFrames:OnStartReadyCheckBtn(wndHandler, wndControl) -- StartR
 end
 
 function BetterRaidFrames:OnGroup_ReadyCheck(nMemberIdx, strMessage)
+	Sound.Play(Sound.PlayUIQueuePopsAdventure)
 	local tMember = GroupLib.GetGroupMember(nMemberIdx)
 	local strName = Apollo.GetString("RaidFrame_TheRaid")
 	if tMember then
