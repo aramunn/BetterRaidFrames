@@ -348,12 +348,15 @@ function BetterRaidFrames:OnLoad()
         if self.contextMenuPlayer.wndMain ~= nil then
             local wndButtonList = self.contextMenuPlayer.wndMain:FindChild("ButtonList")
             if wndButtonList ~= nil then
-                local wndNew = wndButtonList:FindChildByUserData(tObject)
-                if not wndNew then
-                    wndNew = Apollo.LoadForm(self.contextMenuPlayer.xmlDoc, "BtnRegular", wndButtonList, self.contextMenuPlayer)
-                    wndNew:SetData("Add to Focus Group")
-                end
-                wndNew:FindChild("BtnText"):SetText("Add to Focus Group")
+            ---------------- Replaced for fix since API 12 ----------------
+                -- local wndNew = wndButtonList:FindChildByUserData(tObject)
+                -- if not wndNew then
+                    -- wndNew = Apollo.LoadForm(self.contextMenuPlayer.xmlDoc, "BtnRegular", wndButtonList, self.contextMenuPlayer)
+                    -- wndNew:SetData("Add to Focus Group")
+                -- end
+                -- wndNew:FindChild("BtnText"):SetText("Add to Focus Group")
+                self.contextMenuPlayer:HelperBuildRegularButton(wndButtonList, "BtnAddToFocusGroup", "Add to Focus Group")
+            ---------------- Replaced for fix since API 12 ----------------
             end
         end
         oldRedrawAll(context)
@@ -362,7 +365,7 @@ function BetterRaidFrames:OnLoad()
     -- catch the event fired when the player clicks the context menu
     local oldProcessContextClick = self.contextMenuPlayer.ProcessContextClick
     self.contextMenuPlayer.ProcessContextClick = function(context, eButtonType)
-        if eButtonType == "Add to Focus Group" then
+        if eButtonType == "BtnAddToFocusGroup" then -- renamed for fix on API 12
 			local idx = self:CharacterToIdx(self.contextMenuPlayer.strTarget)
 			if not idx or not GroupLib.InRaid() then
 				ChatSystemLib.PostOnChannel(2,"Error! You can only add people in your raid to the focus group.")
