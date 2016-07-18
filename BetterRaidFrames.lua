@@ -5,6 +5,7 @@
 
 require "Window"
 require "bit32"
+require "MatchMakingLib"
 
 local BetterRaidFrames = {}
 
@@ -84,17 +85,17 @@ local ktIdToClassTooltip =
 local ktIdToRoleSprite =  -- -1 is valid
 {
 	[-1] = "",
-	[MatchingGame.Roles.Tank] 	= "sprRaid_Icon_RoleTank",
-	[MatchingGame.Roles.Healer] = "sprRaid_Icon_RoleHealer",
-	[MatchingGame.Roles.DPS] 	= "sprRaid_Icon_RoleDPS",
+	[MatchMakingLib.Roles.Tank] 	= "sprRaid_Icon_RoleTank",
+	[MatchMakingLib.Roles.Healer] = "sprRaid_Icon_RoleHealer",
+	[MatchMakingLib.Roles.DPS] 	= "sprRaid_Icon_RoleDPS",
 }
 
 local ktIdToRoleTooltip =
 {
 	[-1] = "",
-	[MatchingGame.Roles.Tank] 	= "Matching_Role_Tank",
-	[MatchingGame.Roles.Healer] = "Matching_Role_Healer",
-	[MatchingGame.Roles.DPS] 	= "Matching_Role_Dps",
+	[MatchMakingLib.Roles.Tank] 	= "Matching_Role_Tank",
+	[MatchMakingLib.Roles.Healer] = "Matching_Role_Healer",
+	[MatchMakingLib.Roles.DPS] 	= "Matching_Role_Dps",
 }
 
 local ktIdToLeaderSprite =  -- 0 is valid
@@ -138,9 +139,9 @@ local ktLootModeToString =
 local ktRoleNames =
 {
 	[-1] = "",
-	[MatchingGame.Roles.Tank] = Apollo.GetString("RaidFrame_Tanks"),
-	[MatchingGame.Roles.Healer] = Apollo.GetString("RaidFrame_Healers"),
-	[MatchingGame.Roles.DPS] = Apollo.GetString("RaidFrame_DPS"),
+	[MatchMakingLib.Roles.Tank] = Apollo.GetString("RaidFrame_Tanks"),
+	[MatchMakingLib.Roles.Healer] = Apollo.GetString("RaidFrame_Healers"),
+	[MatchMakingLib.Roles.DPS] = Apollo.GetString("RaidFrame_DPS"),
 }
 
 
@@ -1307,11 +1308,11 @@ function BetterRaidFrames:UpdateSpecificMember(tRaidMember, nCodeIdx, tMemberDat
 
 	if bShowRoleIcon then
 		if tMemberData.bDPS then
-			nRoleIdx = MatchingGame.Roles.DPS
+			nRoleIdx = MatchMakingLib.Roles.DPS
 		elseif tMemberData.bHealer then
-			nRoleIdx = MatchingGame.Roles.Healer
+			nRoleIdx = MatchMakingLib.Roles.Healer
 		elseif tMemberData.bTank then
-			nRoleIdx = MatchingGame.Roles.Tank
+			nRoleIdx = MatchMakingLib.Roles.Tank
 		end
 		local tPixieInfo = wndRoleIcon:GetPixieInfo(1)
 		if tPixieInfo then
