@@ -4,8 +4,8 @@
 " Version="0.37">
     <Form Name="BetterRaidFrames.xml"/>
     <Script Name="BetterRaidFrames.lua"/>
-	<Script Name="Libs/GeminiColor/GeminiColor.lua"/>
+    <Script Name="Libs/GeminiColor/GeminiColor.lua"/>
     <Form Name="Libs/GeminiColor/GeminiColor.xml"/>
     <ReplaceAddon Name="RaidFrameBase"/>
-	<ReplaceAddon Name="RaidFrameReady"/>
+    <ReplaceAddon Name="RaidFrameReady"/>
 </Addon>
