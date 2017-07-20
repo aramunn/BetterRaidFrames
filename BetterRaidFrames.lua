@@ -2577,22 +2577,33 @@ function BetterRaidFrames:Button_ConsistentIconOffset( wndHandler, wndControl, e
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 end
 
-function BetterRaidFrames:Button_ShowRaidByRole(wndHandler, wndControl, eMouseButton)
-	-- We cannot have category/role ordering and class ordering at the same time.
-	self.wndConfig:FindChild("Button_ShowRaidByClass"):SetCheck(self.settings.bShowRaidByClass and not wndHandler:IsChecked())
-	self.settings.bShowRaidByClass = self.settings.bShowRaidByClass and not wndHandler:IsChecked()
-
-	self.settings.bShowRaidByRole = wndHandler:IsChecked()
+function BetterRaidFrames:Button_ShowRaidByRoleCheck(wndHandler, wndControl, eMouseButton)
+	self.settings.bShowRaidByRole = true
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
-function BetterRaidFrames:Button_ShowRaidByClass(wndHandler, wndControl, eMouseButton)
-	-- We cannot have category/role ordering and class ordering at the same time.
-	self.wndConfig:FindChild("Button_ShowRaidByRole"):SetCheck(self.settings.bShowRaidByRole and not wndHandler:IsChecked())
-	self.settings.bShowRaidByRole = self.settings.bShowRaidByRole and not wndHandler:IsChecked()
+function BetterRaidFrames:Button_ShowRaidByRoleUncheck(wndHandler, wndControl, eMouseButton)
+	self.settings.bShowRaidByRole = false
+end
 
-	self.settings.bShowRaidByClass = wndHandler:IsChecked()
+function BetterRaidFrames:Button_ShowRaidByClassCheck(wndHandler, wndControl, eMouseButton)
+	self.settings.bShowRaidByClass = true
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
+end
+
+function BetterRaidFrames:Button_ShowRaidByClassUncheck(wndHandler, wndControl, eMouseButton)
+	self.settings.bShowRaidByClass = false
+end
+
+function BetterRaidFrames:Button_ShowRaidByVinceCheck(wndHandler, wndControl, eMouseButton)
+	self.settings.bShowRaidByClass = true
+	-- self.settings.bShowRaidByVince = true
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
+end
+
+function BetterRaidFrames:Button_ShowRaidByVinceUncheck(wndHandler, wndControl, eMouseButton)
+	self.settings.bShowRaidByClass = false
+	-- self.settings.bShowRaidByVince = false
 end
 
 function BetterRaidFrames:Button_OrderAlphabetically(wndHandler, wndControl, eMouseButton)
