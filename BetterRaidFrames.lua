@@ -216,6 +216,7 @@ local DefaultSettings = {
 	bConsistentIconOffset = false,
 	bShowRaidByRole = true,
 	bShowRaidByClass = false,
+	bShowRaidByVince = false,
 	bOrderAlphabetically = true,
 	
 	-- Custom settings via /brf colors
@@ -272,6 +273,7 @@ function BetterRaidFrames:new(o)
 
 	o.arWindowMap = {}
 	o.arMemberIndexToWindow = {}
+	o.arVinceGroups = { ["blah"] = "Testing" }
 	o.nDirtyFlag = 0
 
     return o
@@ -588,6 +590,8 @@ function BetterRaidFrames:RefreshSettings()
 		self.wndConfig:FindChild("Button_ShowRaidByRole"):SetCheck(self.settings.bShowRaidByRole) end
 	if self.settings.bShowRaidByClass ~= nil then
 		self.wndConfig:FindChild("Button_ShowRaidByClass"):SetCheck(self.settings.bShowRaidByClass) end
+	if self.settings.bShowRaidByVince ~= nil then
+		self.wndConfig:FindChild("Button_ShowRaidByVince"):SetCheck(self.settings.bShowRaidByVince) end
 	if self.settings.bOrderAlphabetically ~= nil then
 		self.wndConfig:FindChild("Button_OrderAlphabetically"):SetCheck(self.settings.bOrderAlphabetically) end
 
@@ -878,6 +882,8 @@ function BetterRaidFrames:BuildAllFrames()
 		tCategoriesToUse = ktRoleCategoriesToUse
 	elseif self.settings.bShowRaidByClass then
 		tCategoriesToUse = ktClassCategoriesToUse
+	elseif self.settings.bShowRaidByVince then
+		tCategoriesToUse = self.arVinceGroups
 	end
 
 	local nInvalidOrDeadMembers = 0
@@ -1796,9 +1802,11 @@ end
 function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 	local tCategoriesToUse = {Apollo.GetString("RaidFrame_Members")}
 	if self.settings.bShowRaidByRole then
-		tCategoriesToUse = {Apollo.GetString("RaidFrame_Tanks"), Apollo.GetString("RaidFrame_Healers"), Apollo.GetString("RaidFrame_DPS")}
+		tCategoriesToUse = ktRoleCategoriesToUse
 	elseif self.settings.bShowRaidByClass then
 		tCategoriesToUse = ktClassCategoriesToUse
+	elseif self.settings.bShowRaidByVince then
+		tCategoriesToUse = self.arVinceGroups
 	end
 
 	for key, strCurrCategory in pairs(tCategoriesToUse) do
@@ -1911,6 +1919,8 @@ function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberDat
 		bResult = not tMemberData.bTank and not tMemberData.bHealer
 	elseif self:in_array(ktClassCategoriesToUse, strCurrCategory) then
 		bResult = strCurrCategory == tMemberData.strClassName
+	elseif self:in_array(self.arVinceGroups, strCurrCategory) then
+		--TODO
 	end
 	return bResult
 end
@@ -2596,14 +2606,12 @@ function BetterRaidFrames:Button_ShowRaidByClassUncheck(wndHandler, wndControl, 
 end
 
 function BetterRaidFrames:Button_ShowRaidByVinceCheck(wndHandler, wndControl, eMouseButton)
-	self.settings.bShowRaidByClass = true
-	-- self.settings.bShowRaidByVince = true
+	self.settings.bShowRaidByVince = true
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
 function BetterRaidFrames:Button_ShowRaidByVinceUncheck(wndHandler, wndControl, eMouseButton)
-	self.settings.bShowRaidByClass = false
-	-- self.settings.bShowRaidByVince = false
+	self.settings.bShowRaidByVince = false
 end
 
 function BetterRaidFrames:Button_OrderAlphabetically(wndHandler, wndControl, eMouseButton)
