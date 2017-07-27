@@ -273,7 +273,7 @@ function BetterRaidFrames:new(o)
 
 	o.arWindowMap = {}
 	o.arMemberIndexToWindow = {}
-	o.arVinceGroups = { ["blah"] = "Testing" }
+	o.tVinceGroups = { all = "All" }
 	o.nDirtyFlag = 0
 
     return o
@@ -380,6 +380,9 @@ function BetterRaidFrames:OnLoad()
             oldProcessContextClick(context, eButtonType)
         end
     end
+	
+	-- get info from vince raid frames
+	self.timerJoinVinceICCommChannel = ApolloTimer.Create(5, false, "JoinVinceICCommChannel", self)
 
 end
 
@@ -883,7 +886,7 @@ function BetterRaidFrames:BuildAllFrames()
 	elseif self.settings.bShowRaidByClass then
 		tCategoriesToUse = ktClassCategoriesToUse
 	elseif self.settings.bShowRaidByVince then
-		tCategoriesToUse = self.arVinceGroups
+		tCategoriesToUse = self.tVinceGroups
 	end
 
 	local nInvalidOrDeadMembers = 0
@@ -1806,7 +1809,7 @@ function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 	elseif self.settings.bShowRaidByClass then
 		tCategoriesToUse = ktClassCategoriesToUse
 	elseif self.settings.bShowRaidByVince then
-		tCategoriesToUse = self.arVinceGroups
+		tCategoriesToUse = self.tVinceGroups
 	end
 
 	for key, strCurrCategory in pairs(tCategoriesToUse) do
@@ -1919,8 +1922,8 @@ function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberDat
 		bResult = not tMemberData.bTank and not tMemberData.bHealer
 	elseif self:in_array(ktClassCategoriesToUse, strCurrCategory) then
 		bResult = strCurrCategory == tMemberData.strClassName
-	elseif self:in_array(self.arVinceGroups, strCurrCategory) then
-		--TODO
+	elseif self:in_array(self.tVinceGroups, strCurrCategory) then
+		bResult = self.tVinceGroups[tMemberData.strCharacterName] == strCurrCategory
 	end
 	return bResult
 end
@@ -2852,6 +2855,81 @@ end
 function BetterRaidFrames:UpdateMainUpdateTimer()
 	Apollo.StopTimer("RaidUpdateTimer")
 	Apollo.CreateTimer("RaidUpdateTimer", self.settings.fMainUpdateTimer, true)
+end
+
+function BetterRaidFrames:JoinVinceICCommChannel()
+	self.timerJoinVinceICCommChannel = nil
+	self.vinceChannel = ICCommLib.JoinChannel("VinceRF", ICCommLib.CodeEnumICCommChannelType.Group)
+	-- this. fucking. game.
+	if not self.vinceChannel:IsReady() then
+		self.timerJoinVinceICCommChannel = ApolloTimer.Create(3, false, "JoinVinceICCommChannel", self)
+	else
+		self.vinceChannel:SetReceivedMessageFunction("OnVinceICCommMessageReceived", self)
+	end
+end
+
+function BetterRaidFrames:OnVinceICCommMessageReceived(channel, strMessage, strSender)
+	local message = self:DecodeVince(strMessage)
+	if type(message) ~= "table" then return end
+	local tMembers = self:MapVinceMembers()
+	if tMembers[strSender].bIsLeader then
+		if message.layout then
+			self:ImportVinceLayout(message.layout, tMembers)
+			Print("imported!")
+		elseif message.defaultGroups then
+			Print("default!")
+			-- self.settings.tanksHealsDpsLayout = true
+			-- self:CreateDefaultGroups()
+			-- self:ArrangeMembers()
+		end
+	end
+end
+
+function BetterRaidFrames:DecodeVince(str)
+	if type(str) ~= "string" then return nil end
+	local func = loadstring("return " .. str)
+	if not func then return nil end
+	setfenv(func, {})
+	local success, value = pcall(func)
+	return value
+end
+
+function BetterRaidFrames:MapVinceMembers()
+	local arMemberNames = {}
+	local tMembers = {}
+	local nGroupMemberCount = GroupLib.GetMemberCount()
+	for idx = 1, nGroupMemberCount do
+		local tMember = GroupLib.GetGroupMember(idx)
+		if tMember then
+			table.insert(arMemberNames, tMember.strCharacterName)
+			tMembers[tMember.strCharacterName] = {
+				bIsLeader = tMember.bIsLeader
+			}
+		end
+	end
+	table.sort(arMemberNames)
+	tMembers.arIdMap = {}
+	for idx, strName in ipairs(arMemberNames) do
+		tMembers[strName].nId = idx
+		tMembers.arIdMap[idx] = strName
+	end
+	return tMembers
+end
+
+function BetterRaidFrames:ImportVinceLayout(tLayout, tMembers)
+	if not tLayout or type(tLayout) ~= "table" or #tLayout == 0 then return end
+	-- self.settings.tanksHealsDpsLayout = false
+	self.tVinceGroups = {}
+	local nGroupIdx = 0
+	local strGroup = "All"
+	for _,v in ipairs(tLayout) do
+		if type(v) == "string" then
+			nGroupIdx = nGroupIdx + 1
+			strGroup = v
+		elseif type(v) == "number" and nGroupIdx > 0 then
+			self.tVinceGroups[tMembers.arIdMap[v]] = strGroup
+		end
+	end
 end
 
 local BetterRaidFramesInst = BetterRaidFrames:new()
