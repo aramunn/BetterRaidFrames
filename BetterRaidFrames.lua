@@ -2865,6 +2865,19 @@ function BetterRaidFrames:JoinVinceICCommChannel()
 		self.timerJoinVinceICCommChannel = ApolloTimer.Create(3, false, "JoinVinceICCommChannel", self)
 	else
 		self.vinceChannel:SetReceivedMessageFunction("OnVinceICCommMessageReceived", self)
+		self.timerVinceVersionAnnounce = ApolloTimer.Create(2, false, "OnShareVinceVersionAnnounce", self)
+	end
+end
+
+function BetterRaidFrames:OnShareVinceVersionAnnounce()
+	local tMembers = self:MapVinceMembers()
+	local unitPlayer = GameLib.GetPlayerUnit()
+	for strName, tMember in pairs(tMembers) do
+		if tMember.bIsLeader and unitPlayer and unitPlayer:GetName() ~= strName and self.vinceChannel then
+			local strVersion = string.format("{ [%q] = %q }", "version", "0.17.2")
+			Print("sharing with "..strName..": "..strVersion)
+			self.vinceChannel:SendPrivateMessage(strName, strVersion)
+		end
 	end
 end
 
