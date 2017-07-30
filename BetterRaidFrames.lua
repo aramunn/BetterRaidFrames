@@ -273,7 +273,6 @@ function BetterRaidFrames:new(o)
 
 	o.arWindowMap = {}
 	o.arMemberIndexToWindow = {}
-	o.tVinceGroups = { all = "All" }
 	o.nDirtyFlag = 0
 
     return o
@@ -525,6 +524,7 @@ function BetterRaidFrames:recursiveCopyTable(from, to)
 end
 
 function BetterRaidFrames:in_array(array, item)
+	if not array then return false end
 	for key,v in pairs(array) do
 		if v == item then
 			return true
@@ -885,7 +885,9 @@ function BetterRaidFrames:BuildAllFrames()
 		tCategoriesToUse = ktRoleCategoriesToUse
 	elseif self.settings.bShowRaidByClass then
 		tCategoriesToUse = ktClassCategoriesToUse
-	elseif self.settings.bShowRaidByVince then
+	end
+
+	if self.settings.bShowRaidByVince and self.tVinceGroups then
 		tCategoriesToUse = self.tVinceGroups
 	end
 
@@ -1808,7 +1810,9 @@ function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 		tCategoriesToUse = ktRoleCategoriesToUse
 	elseif self.settings.bShowRaidByClass then
 		tCategoriesToUse = ktClassCategoriesToUse
-	elseif self.settings.bShowRaidByVince then
+	end
+
+	if self.settings.bShowRaidByVince and self.tVinceGroups then
 		tCategoriesToUse = self.tVinceGroups
 	end
 
@@ -2615,6 +2619,7 @@ end
 
 function BetterRaidFrames:Button_ShowRaidByVinceUncheck(wndHandler, wndControl, eMouseButton)
 	self.settings.bShowRaidByVince = false
+	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
 function BetterRaidFrames:Button_OrderAlphabetically(wndHandler, wndControl, eMouseButton)
@@ -2885,15 +2890,16 @@ function BetterRaidFrames:OnVinceICCommMessageReceived(channel, strMessage, strS
 	local message = self:DecodeVince(strMessage)
 	if type(message) ~= "table" then return end
 	local tMembers = self:MapVinceMembers()
-	if tMembers[strSender].bIsLeader then
+	if tMembers[strSender] and tMembers[strSender].bIsLeader then
 		if message.layout then
 			self:ImportVinceLayout(message.layout, tMembers)
 			Print("imported!")
 		elseif message.defaultGroups then
+			self.tVinceGroups = nil
 			Print("default!")
-			-- self.settings.tanksHealsDpsLayout = true
-			-- self:CreateDefaultGroups()
-			-- self:ArrangeMembers()
+		end
+		if self.settings.bShowRaidByVince then
+			self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 		end
 	end
 end
@@ -2931,10 +2937,9 @@ end
 
 function BetterRaidFrames:ImportVinceLayout(tLayout, tMembers)
 	if not tLayout or type(tLayout) ~= "table" or #tLayout == 0 then return end
-	-- self.settings.tanksHealsDpsLayout = false
 	self.tVinceGroups = {}
+	local strGroup
 	local nGroupIdx = 0
-	local strGroup = "All"
 	for _,v in ipairs(tLayout) do
 		if type(v) == "string" then
 			nGroupIdx = nGroupIdx + 1
