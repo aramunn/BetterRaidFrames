@@ -887,8 +887,9 @@ function BetterRaidFrames:BuildAllFrames()
 		tCategoriesToUse = ktClassCategoriesToUse
 	end
 
-	if self.settings.bShowRaidByVince and self.tVinceGroups then
-		tCategoriesToUse = self.tVinceGroups
+	if self.settings.bShowRaidByVince and self.arVinceGroups then
+		tCategoriesToUse = self.arVinceGroups
+		Print("using vince groups")
 	end
 
 	local nInvalidOrDeadMembers = 0
@@ -1812,8 +1813,9 @@ function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 		tCategoriesToUse = ktClassCategoriesToUse
 	end
 
-	if self.settings.bShowRaidByVince and self.tVinceGroups then
-		tCategoriesToUse = self.tVinceGroups
+	if self.settings.bShowRaidByVince and self.arVinceGroups then
+		tCategoriesToUse = self.arVinceGroups
+		Print("using vince groups")
 	end
 
 	for key, strCurrCategory in pairs(tCategoriesToUse) do
@@ -1917,6 +1919,14 @@ function BetterRaidFrames:OnEnteredCombat(unit, bInCombat)
 end
 
 function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberData)
+	if self.settings.bShowRaidByVince and self.arVinceGroups then
+		local strMemberCategory = self.tVinceMap[tMemberData.strCharacterName]
+		if strMemberCategory then
+			return strMemberCategory == strCurrCategory
+		else
+			return self.arVinceGroups[#self.arVinceGroups] == strCurrCategory
+		end
+	end
 	local bResult = true
 	if strCurrCategory == Apollo.GetString("RaidFrame_Tanks") then
 		bResult =  tMemberData.bTank
@@ -1926,8 +1936,6 @@ function BetterRaidFrames:HelperVerifyMemberCategory(strCurrCategory, tMemberDat
 		bResult = not tMemberData.bTank and not tMemberData.bHealer
 	elseif self:in_array(ktClassCategoriesToUse, strCurrCategory) then
 		bResult = strCurrCategory == tMemberData.strClassName
-	elseif self:in_array(self.tVinceGroups, strCurrCategory) then
-		bResult = self.tVinceGroups[tMemberData.strCharacterName] == strCurrCategory
 	end
 	return bResult
 end
@@ -2895,7 +2903,7 @@ function BetterRaidFrames:OnVinceICCommMessageReceived(channel, strMessage, strS
 			self:ImportVinceLayout(message.layout, tMembers)
 			Print("imported!")
 		elseif message.defaultGroups then
-			self.tVinceGroups = nil
+			self.arVinceGroups = nil
 			Print("default!")
 		end
 		if self.settings.bShowRaidByVince then
@@ -2937,15 +2945,15 @@ end
 
 function BetterRaidFrames:ImportVinceLayout(tLayout, tMembers)
 	if not tLayout or type(tLayout) ~= "table" or #tLayout == 0 then return end
-	self.tVinceGroups = {}
+	self.arVinceGroups = {}
+	self.tVinceMap = {}
 	local strGroup
-	local nGroupIdx = 0
 	for _,v in ipairs(tLayout) do
 		if type(v) == "string" then
-			nGroupIdx = nGroupIdx + 1
 			strGroup = v
-		elseif type(v) == "number" and nGroupIdx > 0 then
-			self.tVinceGroups[tMembers.arIdMap[v]] = strGroup
+			table.insert(self.arVinceGroups, strGroup)
+		elseif type(v) == "number" then
+			self.tVinceMap[tMembers.arIdMap[v]] = strGroup
 		end
 	end
 end
