@@ -379,7 +379,7 @@ function BetterRaidFrames:OnLoad()
             oldProcessContextClick(context, eButtonType)
         end
     end
-	
+
 	-- get info from vince raid frames
 	self.timerJoinVinceICCommChannel = ApolloTimer.Create(5, false, "JoinVinceICCommChannel", self)
 
@@ -524,7 +524,6 @@ function BetterRaidFrames:recursiveCopyTable(from, to)
 end
 
 function BetterRaidFrames:in_array(array, item)
-	if not array then return false end
 	for key,v in pairs(array) do
 		if v == item then
 			return true
@@ -2602,22 +2601,22 @@ function BetterRaidFrames:Button_ConsistentIconOffset( wndHandler, wndControl, e
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyMembers)
 end
 
-function BetterRaidFrames:Button_ShowRaidByRoleCheck(wndHandler, wndControl, eMouseButton)
-	self.settings.bShowRaidByRole = true
+function BetterRaidFrames:Button_ShowRaidByRole(wndHandler, wndControl, eMouseButton)
+	-- We cannot have category/role ordering and class ordering at the same time.
+	self.wndConfig:FindChild("Button_ShowRaidByClass"):SetCheck(self.settings.bShowRaidByClass and not wndHandler:IsChecked())
+	self.settings.bShowRaidByClass = self.settings.bShowRaidByClass and not wndHandler:IsChecked()
+
+	self.settings.bShowRaidByRole = wndHandler:IsChecked()
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
 end
 
-function BetterRaidFrames:Button_ShowRaidByRoleUncheck(wndHandler, wndControl, eMouseButton)
-	self.settings.bShowRaidByRole = false
-end
+function BetterRaidFrames:Button_ShowRaidByClass(wndHandler, wndControl, eMouseButton)
+	-- We cannot have category/role ordering and class ordering at the same time.
+	self.wndConfig:FindChild("Button_ShowRaidByRole"):SetCheck(self.settings.bShowRaidByRole and not wndHandler:IsChecked())
+	self.settings.bShowRaidByRole = self.settings.bShowRaidByRole and not wndHandler:IsChecked()
 
-function BetterRaidFrames:Button_ShowRaidByClassCheck(wndHandler, wndControl, eMouseButton)
-	self.settings.bShowRaidByClass = true
+	self.settings.bShowRaidByClass = wndHandler:IsChecked()
 	self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
-end
-
-function BetterRaidFrames:Button_ShowRaidByClassUncheck(wndHandler, wndControl, eMouseButton)
-	self.settings.bShowRaidByClass = false
 end
 
 function BetterRaidFrames:Button_ShowRaidByVinceCheck(wndHandler, wndControl, eMouseButton)
