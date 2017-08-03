@@ -888,7 +888,6 @@ function BetterRaidFrames:BuildAllFrames()
 
 	if self.settings.bShowRaidByVince and self.arVinceGroups then
 		tCategoriesToUse = self.arVinceGroups
-		Print("using vince groups")
 	end
 
 	local nInvalidOrDeadMembers = 0
@@ -1814,7 +1813,6 @@ function BetterRaidFrames:DestroyMemberWindows(nMemberIdx)
 
 	if self.settings.bShowRaidByVince and self.arVinceGroups then
 		tCategoriesToUse = self.arVinceGroups
-		Print("using vince groups")
 	end
 
 	for key, strCurrCategory in pairs(tCategoriesToUse) do
@@ -2887,7 +2885,6 @@ function BetterRaidFrames:OnShareVinceVersionAnnounce()
 	for strName, tMember in pairs(tMembers) do
 		if tMember.bIsLeader and unitPlayer and unitPlayer:GetName() ~= strName and self.vinceChannel then
 			local strVersion = string.format("{ [%q] = %q }", "version", "0.17.2")
-			Print("sharing with "..strName..": "..strVersion)
 			self.vinceChannel:SendPrivateMessage(strName, strVersion)
 		end
 	end
@@ -2900,10 +2897,8 @@ function BetterRaidFrames:OnVinceICCommMessageReceived(channel, strMessage, strS
 	if tMembers[strSender] and tMembers[strSender].bIsLeader then
 		if message.layout then
 			self:ImportVinceLayout(message.layout, tMembers)
-			Print("imported!")
 		elseif message.defaultGroups then
 			self.arVinceGroups = nil
-			Print("default!")
 		end
 		if self.settings.bShowRaidByVince then
 			self.nDirtyFlag = bit32.bor(self.nDirtyFlag, knDirtyGeneral, knDirtyResize)
